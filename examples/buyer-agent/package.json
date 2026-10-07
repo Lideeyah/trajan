@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "pay": "node --env-file=../mcp-server/.env --import tsx src/pay-once.ts",
-    "mcp-pay": "node --env-file=../mcp-server/.env --import tsx src/mcp-pay.ts"
+    "mcp-pay": "node --env-file=../mcp-server/.env --import tsx src/mcp-pay.ts",
+    "agent": "node --env-file=../mcp-server/.env --import tsx src/agent.ts"
   },
   "keywords": [],
   "author": "",
