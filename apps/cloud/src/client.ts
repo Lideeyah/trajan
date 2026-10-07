@@ -13,7 +13,7 @@ const provider = Provider.create({
 async function connect(): Promise<string> {
   // wallet_connect runs register-or-login with the passkey and the /auth round-trip,
   // which also sets our session cookie.
-  const res = (await provider.request({ method: 'wallet_connect' as any, params: [] as any })) as any
+  const res = (await provider.request({ method: 'wallet_connect' as any })) as any
   const accounts: string[] = res?.accounts?.map((a: any) => (typeof a === 'string' ? a : a.address)) ?? res ?? []
   const address = accounts[0]
   if (!address) throw new Error('No account returned')
@@ -21,7 +21,7 @@ async function connect(): Promise<string> {
 }
 
 async function disconnect() {
-  try { await provider.request({ method: 'wallet_disconnect' as any, params: [] as any }) } catch {}
+  try { await provider.request({ method: 'wallet_disconnect' as any }) } catch {}
   await fetch('/auth/logout', { method: 'POST' }).catch(() => {})
 }
 
