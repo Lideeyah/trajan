@@ -1,0 +1,8 @@
+{
+  "name": "@trajan/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "peerDependencies": { "hono": "*", "mppx": "*" }
+}
