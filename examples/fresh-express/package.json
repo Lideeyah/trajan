@@ -1,0 +1,15 @@
+{
+  "name": "fresh-express",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning --env-file=.env --import tsx src/server.ts"
+  },
+  "dependencies": {
+    "express": "^5",
+    "mppx": "^0.13.1",
+    "@trajan/server": "^0.1.0",
+    "hono": "^4",
+    "viem": "^2"
+  }
+}

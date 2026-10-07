@@ -47,7 +47,7 @@ console.log(`buyer ${account.address}\ntools: ${tools.map((t) => t.name).join(',
 // 3. The agent loop.
 const anthropic = new Anthropic()
 const messages: Anthropic.MessageParam[] = [{ role: 'user', content: task }]
-const receipts: { tool: string; tx: string }[] = []
+const receipts: { tool: string; tx: string; amount?: string }[] = []
 
 for (let turn = 0; turn < 8; turn++) {
   const res = await anthropic.messages.create({
@@ -72,9 +72,10 @@ for (let turn = 0; turn < 8; turn++) {
       const r = await (mcp as any).callTool({ name: b.name, arguments: b.input as Record<string, unknown> })
       const text = (r.content as any[]).map((c) => c.text ?? '').join('')
       const tx: string | undefined = r.receipt?.reference
-      if (tx) receipts.push({ tool: b.name, tx })
-      console.log(tx ? `paid ✓ ${tx.slice(0, 10)}…` : 'free')
-      results.push({ type: 'tool_result', tool_use_id: b.id, content: text + (tx ? `\n[paid on Tempo, tx ${tx}]` : '') })
+      const charge = r._meta?.['trajan/charge'] as { amount: string; currency: string } | undefined
+      if (tx) receipts.push({ tool: b.name, tx, amount: charge?.amount })
+      console.log(tx ? `paid ✓ ${charge ? charge.amount + ' USD ' : ''}${tx.slice(0, 10)}…` : 'free')
+      results.push({ type: 'tool_result', tool_use_id: b.id, content: text + (tx ? `\n[paid ${charge ? charge.amount + ' USD' : ''} on Tempo, tx ${tx}]` : '') })
     } catch (e) {
       console.log(`failed: ${(e as Error).message}`)
       results.push({ type: 'tool_result', tool_use_id: b.id, content: `Error: ${(e as Error).message}`, is_error: true })
@@ -84,5 +85,5 @@ for (let turn = 0; turn < 8; turn++) {
 }
 
 console.log(`\n${receipts.length} paid call(s):`)
-for (const r of receipts) console.log(`  ${r.tool.padEnd(18)} ${EXPLORER}${r.tx}`)
+for (const r of receipts) console.log(`  ${r.tool.padEnd(18)} ${(r.amount ?? '?').padStart(6)} USD  ${EXPLORER}${r.tx}`)
 await mcp.close()

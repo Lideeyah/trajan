@@ -151,7 +151,10 @@ export function paid<A, R extends CallToolResult>(handler: ToolHandler<A, R>, op
   return async (args: A, extra: any) => {
     const result = await mppx.charge({ amount, description: name })(extra)
     if (result.status === 402) throw result.challenge
-    return result.withReceipt(await handler(args, extra))
+    const out = await handler(args, extra)
+    // Tell the buyer what this call cost: the MPP receipt carries a tx reference but no amount.
+    const meta = { ...(out._meta ?? {}), 'trajan/charge': { amount, currency: config.currency, tool: name ?? null } }
+    return result.withReceipt({ ...out, _meta: meta })
   }
 }
 
