@@ -25,6 +25,9 @@ const pages = {
   index: readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'),
   console: readFileSync(new URL('../public/console.html', import.meta.url), 'utf8'),
 }
+// The browser bundle is served by the function too, so it never depends on static-file routing.
+let clientJs: string | null = null
+const clientBundle = () => (clientJs ??= readFileSync(new URL('../public/client.js', import.meta.url), 'utf8'))
 
 const auth = Handler.webAuthn({ kv, origin: ORIGIN, rpId: RP_ID, cookieName: 'trajan_session' })
 
@@ -34,6 +37,7 @@ app.use('*', async (c, next) => { await migrate(); await next() })
 app.route('/auth', auth)
 app.get('/', (c) => c.html(pages.index))
 app.get('/console', (c) => c.html(pages.console))
+app.get('/client.js', (c) => c.body(clientBundle(), 200, { 'content-type': 'application/javascript; charset=utf-8', 'cache-control': 'public, max-age=300' }))
 
 // ---- session helpers ----
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
