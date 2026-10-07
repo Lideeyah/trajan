@@ -230,11 +230,19 @@
       $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = s.revenue + ' all time'
       $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = s.calls + ' all time'
       $('payers').textContent = s.payers
-      const tb = $('recent')
-      tb.innerHTML = recent.length ? recent.map((c) => row(c, false)).join('') : empty(4)
-      tb.querySelectorAll('tr.row').forEach((tr) => { if (seen.size && !seen.has(tr.dataset.hash)) tr.classList.add('flash') })
-      recent.forEach((c) => seen.add(c.tx_hash)); bind(tb)
-      $('top').innerHTML = s.topPayers.length ? s.topPayers.map((p) => `<tr><td class="mono" title="${esc(p.payer)}">${short(p.payer)}</td><td class="num">${p.calls}</td><td class="num mono">${esc(p.revenue)}</td></tr>`).join('') : `<tr><td colspan="3" class="empty">No payers yet</td></tr>`
+      // Only rebuild rows when the set of calls changes, so clicks and focus survive the 2s poll.
+      const tb = $('recent'), key = recent.map((c) => c.tx_hash + ':' + (c.payer || '')).join('|')
+      if (tb.dataset.key !== key) {
+        tb.dataset.key = key
+        tb.innerHTML = recent.length ? recent.map((c) => row(c, false)).join('') : empty(4)
+        tb.querySelectorAll('tr.row').forEach((tr) => { if (seen.size && !seen.has(tr.dataset.hash)) tr.classList.add('flash') })
+        recent.forEach((c) => seen.add(c.tx_hash)); bind(tb)
+      } else {
+        tb.querySelectorAll('tr.row').forEach((tr) => { const c = recent.find((x) => x.tx_hash === tr.dataset.hash); if (c) tr.querySelector('button').textContent = when(c.created_at) })
+      }
+      const topKey = JSON.stringify(s.topPayers)
+      if ($('top').dataset.key !== topKey) { $('top').dataset.key = topKey
+      $('top').innerHTML = s.topPayers.length ? s.topPayers.map((p) => `<tr><td class="mono" title="${esc(p.payer)}">${short(p.payer)}</td><td class="num">${p.calls}</td><td class="num mono">${esc(p.revenue)}</td></tr>`).join('') : `<tr><td colspan="3" class="empty">No payers yet</td></tr>` }
     } catch (e) {
       $('error').textContent = 'Could not reach the console API: ' + e.message + ' — retrying.'; $('error').classList.remove('hidden')
     }
