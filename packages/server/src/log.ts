@@ -16,6 +16,7 @@ export type CallRow = {
   http_method: string
   memo: string | null
   block_number: number | null
+  fee_payer: string | null // address that paid the fee; equals payer when unsponsored
   created_at: string // ISO
 }
 
@@ -42,12 +43,15 @@ export function createCallLog(dbPath: string) {
     CREATE INDEX IF NOT EXISTS calls_created_at ON calls(created_at);
     CREATE INDEX IF NOT EXISTS calls_payer ON calls(payer);
   `)
+  // Migration for databases created before fee_payer existed.
+  const cols = db.prepare(`PRAGMA table_info(calls)`).all() as { name: string }[]
+  if (!cols.some((c) => c.name === 'fee_payer')) db.exec(`ALTER TABLE calls ADD COLUMN fee_payer TEXT`)
 
   const insert = db.prepare(`
-    INSERT OR IGNORE INTO calls (challenge_id, tx_hash, payer, amount, currency, recipient, route, http_method, memo, block_number, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT OR IGNORE INTO calls (challenge_id, tx_hash, payer, amount, currency, recipient, route, http_method, memo, block_number, fee_payer, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  const enrich = db.prepare(`UPDATE calls SET payer = COALESCE(payer, ?), block_number = COALESCE(block_number, ?) WHERE tx_hash = ?`)
+  const enrich = db.prepare(`UPDATE calls SET payer = COALESCE(payer, ?), block_number = COALESCE(block_number, ?), fee_payer = COALESCE(?, fee_payer) WHERE tx_hash = ?`)
   const list = db.prepare(`SELECT * FROM calls ORDER BY id DESC LIMIT ? OFFSET ?`)
   const byHash = db.prepare(`SELECT * FROM calls WHERE tx_hash = ?`)
   const stats = db.prepare(`
@@ -68,11 +72,11 @@ export function createCallLog(dbPath: string) {
     insert(row: Omit<CallRow, 'id'>) {
       insert.run(
         row.challenge_id, row.tx_hash, row.payer, row.amount, row.currency, row.recipient,
-        row.route, row.http_method, row.memo, row.block_number, row.created_at,
+        row.route, row.http_method, row.memo, row.block_number, row.fee_payer, row.created_at,
       )
     },
-    enrich(txHash: string, payer: string, blockNumber: number | null) {
-      enrich.run(payer, blockNumber, txHash)
+    enrich(txHash: string, payer: string, blockNumber: number | null, feePayer: string | null = null) {
+      enrich.run(payer, blockNumber, feePayer, txHash)
     },
     list(limit = 50, offset = 0) {
       return list.all(limit, offset) as CallRow[]

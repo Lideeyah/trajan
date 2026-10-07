@@ -45,13 +45,14 @@ export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions)
         http_method: input?.method ?? (url ? 'GET' : 'MCP'),
         memo: null,
         block_number: null,
+        fee_payer: null,
         created_at: ctx.receipt.timestamp ?? new Date().toISOString(),
       }
       log.insert(row)
       opts.onCall?.(row)
       // Enrich out of band; errors here must never affect the payment path.
       void resolveTx(opts.rpcUrl, txHash)
-        .then((tx) => { if (tx) log.enrich(txHash, payer ?? tx.from, tx.blockNumber) })
+        .then((tx) => { if (tx) log.enrich(txHash, payer ?? tx.from, tx.blockNumber, tx.feePayer) })
         .catch(() => {})
     } catch {
       // Hook errors are swallowed by mppx anyway; be explicit that we don't care.
@@ -59,16 +60,17 @@ export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions)
   })
 }
 
-async function resolveTx(rpcUrl: string, hash: string, attempts = 5): Promise<{ from: string; blockNumber: number | null } | null> {
+// The receipt carries Tempo's `feePayer` (who paid the fee); the tx object does not.
+async function resolveTx(rpcUrl: string, hash: string, attempts = 5): Promise<{ from: string; blockNumber: number | null; feePayer: string | null } | null> {
   for (let i = 0; i < attempts; i++) {
     const res = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionByHash', params: [hash] }),
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [hash] }),
     })
-    const json = (await res.json()) as { result?: { from?: string; blockNumber?: string | null } | null }
+    const json = (await res.json()) as { result?: { from?: string; blockNumber?: string | null; feePayer?: string | null } | null }
     const tx = json.result
-    if (tx?.from) return { from: tx.from, blockNumber: tx.blockNumber ? Number(tx.blockNumber) : null }
+    if (tx?.from) return { from: tx.from, blockNumber: tx.blockNumber ? Number(tx.blockNumber) : null, feePayer: tx.feePayer ?? null }
     await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
   }
   return null

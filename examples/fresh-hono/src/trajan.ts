@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs'
 import type { Hono } from 'hono'
 import { Mppx, tempo } from 'mppx/hono'
+import { privateKeyToAccount } from 'viem/accounts'
 import { createCallLog, attachCallLog, createWallet, trajanConsole, MODERATO_RPC, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS } from '@trajan/server'
 
 const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.meta.url), 'utf8')) as {
@@ -11,8 +12,11 @@ const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.me
 
 if (!process.env.MPP_SECRET_KEY) throw new Error('MPP_SECRET_KEY is not set (see .env)')
 
+/** Optional: sponsor buyers' fees. Set TRAJAN_FEE_PAYER_KEY to a funded account (fees are paid in the stablecoin). */
+const feePayer = process.env.TRAJAN_FEE_PAYER_KEY ? privateKeyToAccount(process.env.TRAJAN_FEE_PAYER_KEY as `0x${string}`) : undefined
+
 export const mppx = Mppx.create({
-  methods: [tempo.charge({ currencies: [config.currency], recipient: config.recipient, testnet: true })],
+  methods: [tempo.charge({ currencies: [config.currency], recipient: config.recipient, testnet: true, feePayer })],
   secretKey: process.env.MPP_SECRET_KEY,
 })
 

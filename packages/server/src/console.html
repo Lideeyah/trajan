@@ -259,7 +259,8 @@
     const c = await api('/calls/' + hash)
     $('receiptBody').innerHTML = [
       ['Route', c.http_method + ' ' + c.route], ['Amount', c.amountFormatted], ['Payer', c.payer || 'resolving…'], ['Recipient', c.recipient],
-      ['Tx hash', c.tx_hash], ['Block', c.block_number ?? '…'], ['Time', new Date(c.created_at).toLocaleString()], ['Challenge', c.challenge_id], ['Memo', c.memo || '—'],
+      ['Tx hash', c.tx_hash], ['Block', c.block_number ?? '…'],
+      ['Fee', c.fee_payer == null ? '…' : (c.payer && c.fee_payer.toLowerCase() !== c.payer.toLowerCase() ? 'sponsored by seller (' + short(c.fee_payer) + ')' : 'paid by caller')], ['Time', new Date(c.created_at).toLocaleString()], ['Challenge', c.challenge_id], ['Memo', c.memo || '—'],
     ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')
     $('receiptExplorer').href = c.explorerUrl
     $('copyHash').onclick = () => navigator.clipboard.writeText(c.tx_hash).then(() => { $('copyHash').textContent = 'Copied'; setTimeout(() => $('copyHash').textContent = 'Copy tx hash', 1200) })

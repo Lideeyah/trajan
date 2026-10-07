@@ -100,7 +100,7 @@ export async function init(flags: InitFlags) {
 
   // 3. deps (added to package.json; the seller runs their own install)
   pkg.dependencies ??= {}
-  const want: Record<string, string> = { mppx: '^0.13.1', '@trajan/server': '^0.1.0', hono: '^4' }
+  const want: Record<string, string> = { mppx: '^0.13.1', '@trajan/server': '^0.1.0', hono: '^4', viem: '^2' }
   if (framework === 'mcp') want['@hono/node-server'] = '^1'
   const added: string[] = []
   for (const [name, ver] of Object.entries(want)) if (!pkg.dependencies[name]) { pkg.dependencies[name] = ver; added.push(name) }
@@ -113,5 +113,5 @@ export async function init(flags: InitFlags) {
   console.log(`\nAdd these lines to your server:\n`)
   for (const l of nextSteps(config, 'trajan.js')) console.log(`  ${l}`)
   console.log(`\nThen start your server and open the console at http://localhost:${framework === 'mcp' ? config.apiPort : 'PORT'}/trajan`)
-  console.log(`Optional: set TRAJAN_WITHDRAW_KEY (the recipient's private key) in .env to enable Withdraw from the console.\n`)
+  console.log(`Optional: TRAJAN_WITHDRAW_KEY (recipient's key) enables Withdraw in the console; TRAJAN_FEE_PAYER_KEY (a funded key) sponsors buyers' fees.\n`)
 }

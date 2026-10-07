@@ -34,6 +34,9 @@ const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.me
 }
 
 if (!process.env.MPP_SECRET_KEY) throw new Error('MPP_SECRET_KEY is not set (see .env)')
+
+/** Optional: sponsor buyers' fees. Set TRAJAN_FEE_PAYER_KEY to a funded account (fees are paid in the stablecoin). */
+const feePayer = process.env.TRAJAN_FEE_PAYER_KEY ? privateKeyToAccount(process.env.TRAJAN_FEE_PAYER_KEY as \`0x\${string}\`) : undefined
 `
 }
 
@@ -64,12 +67,13 @@ export const console_ = trajanConsole(log, {
 }
 
 const chargeMethod = (c: Config) =>
-  `tempo.charge({ currencies: [config.currency], recipient: config.recipient${c.network === 'moderato' ? ', testnet: true' : ''} })`
+  `tempo.charge({ currencies: [config.currency], recipient: config.recipient${c.network === 'moderato' ? ', testnet: true' : ''}, feePayer })`
 
 export function honoTemplate(c: Config) {
   return `${header(c)}import { readFileSync } from 'node:fs'
 import type { Hono } from 'hono'
-import { Mppx, tempo } from 'mppx/hono'${common(c)}
+import { Mppx, tempo } from 'mppx/hono'
+import { privateKeyToAccount } from 'viem/accounts'${common(c)}
 export const mppx = Mppx.create({
   methods: [${chargeMethod(c)}],
   secretKey: process.env.MPP_SECRET_KEY,
@@ -89,7 +93,8 @@ export function expressTemplate(c: Config) {
   return `${header(c)}import { readFileSync } from 'node:fs'
 import type { Express } from 'express'
 import { Hono } from 'hono'
-import { Mppx, tempo } from 'mppx/express'${common(c)}
+import { Mppx, tempo } from 'mppx/express'
+import { privateKeyToAccount } from 'viem/accounts'${common(c)}
 export const mppx = Mppx.create({
   methods: [${chargeMethod(c)}],
   secretKey: process.env.MPP_SECRET_KEY,
@@ -122,7 +127,8 @@ export function mcpTemplate(c: Config) {
   return `${header(c)}import { readFileSync } from 'node:fs'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import { Mppx, Transport, tempo } from 'mppx/server'${common(c)}
+import { Mppx, Transport, tempo } from 'mppx/server'
+import { privateKeyToAccount } from 'viem/accounts'${common(c)}
 export const mppx = Mppx.create({
   methods: [${chargeMethod(c)}],
   secretKey: process.env.MPP_SECRET_KEY,

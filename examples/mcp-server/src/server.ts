@@ -4,6 +4,7 @@
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Mppx, tempo } from 'mppx/hono'
+import { privateKeyToAccount } from 'viem/accounts'
 import {
   createCallLog, attachCallLog, createWallet, trajanConsole,
   MODERATO_RPC, MODERATO_TOKENS, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS,
@@ -16,8 +17,13 @@ if (!RECIPIENT || !SECRET) {
   process.exit(1)
 }
 
+// Optional: sponsor buyers' fees. The fee payer must hold the fee token (pathUSD on Moderato).
+const FEE_PAYER_KEY = process.env.TRAJAN_FEE_PAYER_KEY as `0x${string}` | undefined
+const feePayer = FEE_PAYER_KEY ? privateKeyToAccount(FEE_PAYER_KEY) : undefined
+if (feePayer) console.log(`fee sponsorship on: ${feePayer.address} pays buyers' fees`)
+
 const mppx = Mppx.create({
-  methods: [tempo.charge({ currencies: [MODERATO_TOKENS.pathUSD], recipient: RECIPIENT, testnet: true })],
+  methods: [tempo.charge({ currencies: [MODERATO_TOKENS.pathUSD], recipient: RECIPIENT, testnet: true, feePayer })],
   secretKey: SECRET,
 })
 
