@@ -310,7 +310,11 @@
 
   async function openReceipt(hash) {
     const c = await api('/calls/' + hash)
-    const fee = c.fee_payer == null ? '…' : (c.payer && c.fee_payer.toLowerCase() !== c.payer.toLowerCase() ? 'sponsored by you (' + short(c.fee_payer) + ')' : 'paid by the agent')
+    const lc = (x) => (x || '').toLowerCase()
+    const fee = c.fee_payer == null ? '…'
+      : lc(c.fee_payer) === lc(c.payer) ? 'paid by the agent'
+      : lc(c.fee_payer) === lc(c.recipient) ? 'sponsored by you (' + short(c.fee_payer) + ')'
+      : 'sponsored by ' + short(c.fee_payer)
     $('receiptBody').innerHTML = [
       ['Called', (c.http_method === 'MCP' ? 'tool ' : c.http_method + ' ') + c.route], ['Paid', c.amountFormatted + ' USD'], ['By', c.payer || 'resolving…'], ['To', c.recipient],
       ['Fee', fee], ['Tx hash', c.tx_hash], ['Block', c.block_number ?? '…'], ['Time', new Date(c.created_at).toLocaleString()], ['Memo', c.memo || '—'],
