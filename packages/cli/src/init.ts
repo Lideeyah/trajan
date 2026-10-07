@@ -14,6 +14,9 @@ const MODERATO = {
 export type InitFlags = {
   dir?: string
   yes?: boolean
+  cloud?: boolean
+  apiKey?: string
+  cloudUrl?: string
   framework?: Framework
   network?: Network
   recipient?: string
@@ -95,6 +98,15 @@ export async function init(flags: InitFlags) {
   if (!/^MPP_SECRET_KEY=/m.test(env)) {
     appendFileSync(envPath, `${env && !env.endsWith('\n') ? '\n' : ''}MPP_SECRET_KEY=${randomBytes(32).toString('hex')}\n`)
   }
+  if (flags.cloud) {
+    const key = flags.apiKey ?? (flags.yes ? undefined : await ask('Trajan Cloud API key (from your console, starts with trj_)', {
+      validate: (v) => (/^trj_[A-Za-z0-9_-]{20,}$/.test(v) ? null : 'Paste the key exactly as shown (trj_…)'),
+    }))
+    if (!key) throw new Error('--cloud needs --api-key trj_… (or run without --yes)')
+    const cur = readFileSync(envPath, 'utf8')
+    const withoutOld = cur.split('\n').filter((l) => !/^TRAJAN_(API_KEY|CLOUD_URL)=/.test(l)).join('\n')
+    writeFileSync(envPath, `${withoutOld.replace(/\n*$/, '\n')}TRAJAN_API_KEY=${key}\nTRAJAN_CLOUD_URL=${flags.cloudUrl ?? 'https://trajan.vercel.app'}\n`)
+  }
   const gi = join(dir, '.gitignore')
   const gitignore = existsSync(gi) ? readFileSync(gi, 'utf8') : ''
   const missing = ['.env', '.trajan/'].filter((l) => !gitignore.split('\n').includes(l))
@@ -110,7 +122,7 @@ export async function init(flags: InitFlags) {
 
   closePrompts()
 
-  console.log(`\nWrote ${srcDir}/trajan.ts and ${srcDir}/trajan.config.json`)
+  console.log(`\nWrote ${srcDir}/trajan.ts and ${srcDir}/trajan.config.json${flags.cloud ? ' · connected to Trajan Cloud' : ''}`)
   console.log(`Set MPP_SECRET_KEY in .env${added.length ? `; added deps: ${added.join(', ')} (run npm install)` : ''}`)
   console.log(`\nAdd these lines to your server:\n`)
   for (const l of nextSteps(config, 'trajan.js')) console.log(`  ${l}`)

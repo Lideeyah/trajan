@@ -1,0 +1,21 @@
+{
+  "name": "@trajan/cloud",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/client.ts --bundle --format=esm --platform=browser --target=es2022 --minify --outfile=public/client.js"
+  },
+  "dependencies": {
+    "hono": "^4",
+    "accounts": "*",
+    "@neondatabase/serverless": "^1",
+    "mppx": "*",
+    "viem": "^2",
+    "@trajan/server": "*"
+  },
+  "devDependencies": {
+    "esbuild": "*"
+  }
+}

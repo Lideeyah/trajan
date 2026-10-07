@@ -14,6 +14,8 @@ export type AttachOptions = {
   rpcUrl: string
   /** Called after each row is written (useful for logging in dev). */
   onCall?: (row: { tx_hash: string; route: string; amount: string }) => void
+  /** Also report each call to Trajan Cloud. Set from TRAJAN_CLOUD_URL + TRAJAN_API_KEY by the generated module. */
+  cloud?: { url: string; apiKey: string } | undefined
 }
 
 export const MODERATO_RPC = 'https://rpc.moderato.tempo.xyz'
@@ -52,8 +54,13 @@ export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions)
       opts.onCall?.(row)
       // Enrich out of band; errors here must never affect the payment path.
       void resolveTx(opts.rpcUrl, txHash)
-        .then((tx) => { if (tx) log.enrich(txHash, payer ?? tx.from, tx.blockNumber, tx.feePayer) })
-        .catch(() => {})
+        .then((tx) => {
+          if (!tx) return
+          log.enrich(txHash, payer ?? tx.from, tx.blockNumber, tx.feePayer)
+          // Cloud gets one post, after enrichment, with everything filled in.
+          if (opts.cloud) void report(opts.cloud, { ...row, payer: payer ?? tx.from, block_number: tx.blockNumber, fee_payer: tx.feePayer })
+        })
+        .catch(() => { if (opts.cloud) void report(opts.cloud, row) })
     } catch {
       // Hook errors are swallowed by mppx anyway; be explicit that we don't care.
     }
@@ -74,4 +81,17 @@ async function resolveTx(rpcUrl: string, hash: string, attempts = 5): Promise<{ 
     await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
   }
   return null
+}
+
+async function report(cloud: { url: string; apiKey: string }, row: Record<string, unknown>) {
+  try {
+    await fetch(cloud.url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${cloud.apiKey}` },
+      body: JSON.stringify(row),
+      signal: AbortSignal.timeout(8000),
+    })
+  } catch {
+    // Reporting is best-effort; the local log is the source of truth.
+  }
 }

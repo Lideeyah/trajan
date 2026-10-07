@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajan</title>
+<meta name="description" content="Get paid by AI agents for your API or MCP server, on Tempo. One command, and a console that shows you the money.">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%274.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M8 40 V26 a8 8 0 0 1 16 0 V40 M24 40 V26 a8 8 0 0 1 16 0 V40%27/%3E%3Cpath d=%27M5 40 H43%27/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#f4f2ee; --fg:#111; --muted:#6f6c66; --card:#fff; --border:#e6e2da; --soft:#ebe8e2; --accent:#111; --accent-fg:#fff; --live:#ff7a00; --ok:#1a7f37; --ok-bg:#e8f5ec; --err:#b42318; --err-bg:#fdecec;
+    --sans:"DM Sans",system-ui,sans-serif; --display:Cinzel,Georgia,serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; }
+  * { box-sizing:border-box } html,body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased }
+  a { color:inherit } button,input { font:inherit; color:inherit } :focus-visible { outline:2px solid var(--fg); outline-offset:3px; border-radius:10px }
+  .wrap { max-width:1080px; margin:0 auto; padding:20px 16px 80px }
+  header { display:flex; align-items:center; justify-content:space-between; padding:10px 6px 40px }
+  .wordmark { display:inline-flex; align-items:baseline; gap:10px; text-decoration:none; font-family:var(--display); font-weight:600; font-size:21px; line-height:1; letter-spacing:.14em }
+  .wordmark svg { height:.74em; width:auto }
+  .btn { min-height:46px; padding:0 22px; border-radius:999px; border:1px solid var(--border); background:var(--card); cursor:pointer; font-weight:500; display:inline-flex; align-items:center; gap:8px; text-decoration:none }
+  .btn.primary { background:var(--accent); color:var(--accent-fg); border-color:var(--accent) } .btn:disabled { opacity:.5; cursor:not-allowed }
+  .hero { padding:36px 0 44px; max-width:760px }
+  h1 { font-family:var(--display); font-weight:600; font-size:clamp(34px,5.4vw,58px); line-height:1.08; letter-spacing:.02em; margin:0 0 18px }
+  .lede { font-size:19px; color:var(--muted); margin:0 0 28px; max-width:620px }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+  .hint { font-size:13.5px; color:var(--muted) }
+  .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin:16px 0 40px }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:22px; min-width:0 }
+  .card h3 { margin:0 0 6px; font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:.06em }
+  .card p { margin:0; color:var(--muted); font-size:14.5px }
+  .step { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px }
+  code,pre { font-family:var(--mono); font-size:13px } code { background:var(--soft); padding:2px 7px; border-radius:6px }
+  pre { margin:10px 0 0; padding:12px 14px; background:var(--soft); border-radius:16px; overflow-x:auto; line-height:1.7 }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:26px; max-width:560px }
+  form .field { display:grid; gap:6px; margin-bottom:16px } label { font-size:13.5px; font-weight:500 }
+  input[type=text] { min-height:46px; padding:0 14px; border:1px solid var(--border); border-radius:16px; background:var(--bg); width:100%; font-size:15px } input.mono { font-family:var(--mono); font-size:14px }
+  .err { color:var(--err); background:var(--err-bg); border-radius:16px; padding:12px 14px; margin-top:12px } .ok { color:var(--ok); background:var(--ok-bg); border-radius:16px; padding:12px 14px }
+  .key { font-family:var(--mono); font-size:13px; background:var(--soft); padding:12px 14px; border-radius:16px; word-break:break-all; user-select:all }
+  .hidden { display:none !important }
+  footer { margin-top:60px; color:var(--muted); font-size:13px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="wordmark" href="/" aria-label="Trajan"><svg viewBox="2 16 44 26" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 40 V24 a6 6 0 0 1 12 0 V40 M18 40 V24 a6 6 0 0 1 12 0 V40 M30 40 V24 a6 6 0 0 1 12 0 V40"/><path d="M4 40 H44"/></svg>TRAJAN</a>
+    <div class="row" id="headerActions"><button class="btn" id="signInTop">Sign in</button></div>
+  </header>
+
+  <!-- Signed out -->
+  <section id="landing">
+    <div class="hero">
+      <h1>Get paid by agents for the thing you already run.</h1>
+      <p class="lede">An API, a dataset, an MCP tool. Add two lines, and every call costs what you say. Agents pay on Tempo in about a second; you watch it land.</p>
+      <div class="row">
+        <button class="btn primary" id="signUp">Create your seller with a passkey</button>
+        <button class="btn" id="signIn">I already have one</button>
+      </div>
+      <p class="hint" style="margin-top:12px">Your passkey is your Tempo account. Face ID or Touch ID, no seed phrase, no extension. Payments go straight to it.</p>
+      <div id="authErr" class="err hidden" role="alert"></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="step">Step 1</div><h3>SET UP</h3><p>Sign up, name your seller, set a price. Run <code>npx trajan init --cloud</code> in your server. Add the two lines it prints.</p></div>
+      <div class="card"><div class="step">Step 2</div><h3>GET PAID</h3><p>An agent calls your tool, gets a 402 with the price, pays, and gets its answer. You see the receipt here.</p></div>
+      <div class="card"><div class="step">Step 3</div><h3>CASH OUT</h3><p>Funds are already at your address — nothing is held by Trajan. Move them whenever you like.</p></div>
+    </div>
+    <p class="hint">Live on Tempo Moderato testnet during the Crypto World's Fair hackathon. Self-hosting? The open-source version runs without an account: <a href="https://github.com/Lideeyah/trajan">github.com/Lideeyah/trajan</a>.</p>
+  </section>
+
+  <!-- Signed in, no seller yet -->
+  <section id="setup" class="hidden">
+    <div class="hero" style="padding-bottom:20px"><h1 style="font-size:clamp(28px,4vw,40px)">Name your seller</h1><p class="lede">Your passkey is in. Two details and you're live.</p></div>
+    <div class="panel">
+      <form id="setupForm" novalidate>
+        <div class="field"><label for="name">What are you selling?</label><input type="text" id="name" name="name" autocomplete="organization" placeholder="e.g. Sneaker price API" maxlength="60"></div>
+        <div class="field"><label for="price">Price per call (USD)</label><input type="text" id="price" name="price" inputmode="decimal" value="0.01" class="mono"></div>
+        <div class="field"><label for="address">Payments go to</label><input type="text" id="address" name="address" class="mono" readonly><span class="hint">This is your passkey's Tempo address. You can change it later.</span></div>
+        <button class="btn primary" type="submit" id="setupBtn">Create seller</button>
+        <div id="setupErr" class="err hidden" role="alert"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Seller created: show the key once -->
+  <section id="created" class="hidden">
+    <div class="hero" style="padding-bottom:20px"><h1 style="font-size:clamp(28px,4vw,40px)">You're live. Here's your key.</h1><p class="lede">Shown once. Put it in your server's <code>.env</code> as <code>TRAJAN_API_KEY</code>.</p></div>
+    <div class="panel">
+      <div class="key" id="apiKey"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="copyKey">Copy key</button></div>
+      <h3 style="font-family:var(--display);letter-spacing:.06em;font-size:14px;margin:26px 0 6px">THEN, IN YOUR SERVER</h3>
+      <pre id="installPre"></pre>
+      <div class="row" style="margin-top:22px"><a class="btn primary" href="/console">Open your console</a></div>
+    </div>
+  </section>
+
+  <footer>Trajan · seller tooling for the Machine Payments Protocol on Tempo · built on mppx</footer>
+</div>
+
+<script type="module">
+  import '/client.js'
+  const $ = (id) => document.getElementById(id)
+  const show = (id) => { for (const s of ['landing','setup','created']) $(s).classList.toggle('hidden', s !== id) }
+  let address = null
+
+  async function boot() {
+    const m = await window.trajan.me()
+    if (m.signedIn && m.seller) { location.replace('/console'); return }
+    if (m.signedIn && !m.seller) { $('headerActions').innerHTML = '<button class="btn" id="out">Sign out</button>'; $('out').onclick = signOut; show('setup'); return }
+    show('landing')
+  }
+  async function connect(e) {
+    const btn = e.currentTarget; btn.disabled = true; $('authErr').classList.add('hidden')
+    try {
+      address = await window.trajan.connect()
+      const m = await window.trajan.me()
+      if (m.seller) { location.replace('/console'); return }
+      $('address').value = address
+      $('headerActions').innerHTML = '<button class="btn" id="out">Sign out</button>'; $('out').onclick = signOut
+      show('setup'); $('name').focus()
+    } catch (err) {
+      $('authErr').textContent = (err && err.message) || 'Passkey sign-in failed. Try again.'; $('authErr').classList.remove('hidden')
+    } finally { btn.disabled = false }
+  }
+  async function signOut() { await window.trajan.disconnect(); location.reload() }
+  $('signUp').onclick = connect; $('signIn').onclick = connect; $('signInTop').onclick = connect
+
+  $('setupForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('setupErr').classList.add('hidden'); $('setupBtn').disabled = true
+    try {
+      const r = await fetch('/api/sellers', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: $('name').value, price: $('price').value.trim(), address: $('address').value }) })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error || r.statusText)
+      $('apiKey').textContent = j.apiKey
+      $('installPre').textContent = `npx trajan init --cloud\n# paste the key when asked, then add the two lines it prints`
+      show('created')
+    } catch (err) { $('setupErr').textContent = err.message; $('setupErr').classList.remove('hidden') }
+    finally { $('setupBtn').disabled = false }
+  })
+  $('copyKey').onclick = () => navigator.clipboard.writeText($('apiKey').textContent).then(() => { $('copyKey').textContent = 'Copied'; setTimeout(() => $('copyKey').textContent = 'Copy key', 1200) })
+
+  boot().catch((e) => { $('authErr').textContent = e.message; $('authErr').classList.remove('hidden'); show('landing') })
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%274.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M8 40 V26 a8 8 0 0 1 16 0 V40 M24 40 V26 a8 8 0 0 1 16 0 V40%27/%3E%3Cpath d=%27M5 40 H43%27/%3E%3C/svg%3E">
+<style>
+  /* Tempo's language: warm off-white, near-black, big rounded containers, one orange dot. */
+  :root {
+    --bg: #f4f2ee; --fg: #111111; --muted: #6f6c66; --card: #ffffff; --border: #e6e2da; --soft: #ebe8e2;
+    --accent: #111111; --accent-fg: #ffffff; --live: #ff7a00; --ok: #1a7f37; --ok-bg: #e8f5ec; --err: #b42318; --err-bg: #fdecec;
+    --ring: #111111; --r-lg: 24px; --r-md: 16px; --r-sm: 10px;
+    --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --display: Cinzel, "Trajan Pro", Georgia, serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  /* Light (Tempo off-white) is the default everywhere. Dark is opt-in: <html data-theme="dark">. */
+  :root[data-theme="dark"] {
+    --bg: #0b0d12; --fg: #f3f3f1; --muted: #9a9892; --card: #14171f; --border: #232733; --soft: #1b1f29;
+    --accent: #f3f3f1; --accent-fg: #0b0d12; --ok: #4ade80; --ok-bg: #0f2a1a; --err: #f87171; --err-bg: #3a1212; --ring: #f3f3f1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: var(--r-sm); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 72px; }
+
+  /* Header: the app name stands alone; the seller and network sit beside it. */
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 6px 22px; flex-wrap: wrap; }
+  .wordmark { display: inline-flex; align-items: baseline; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 600; font-size: 21px; line-height: 1; letter-spacing: 0.14em; }
+  /* Mark cropped to the arches; height = cap height; bottom edge sits on the text baseline. */
+  .wordmark svg { height: 0.74em; width: auto; vertical-align: baseline; display: inline-block; }
+  .context { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .context .seller { color: var(--fg); font-weight: 500; }
+  .live { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 22%, transparent); }
+  .addr { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+
+  /* Steps: the flow is the navigation. */
+  nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px; background: var(--soft); border-radius: var(--r-lg); margin-bottom: 18px; }
+  nav button { min-height: 52px; border: 0; background: transparent; border-radius: 18px; cursor: pointer; color: var(--muted); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 8px 16px; gap: 1px; text-align: left; }
+  nav button .n { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+  nav button .t { font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: 0.06em; color: inherit; }
+  nav button[aria-selected="true"] { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  nav button .done { color: var(--ok); }
+  @media (max-width: 640px) { nav button .n { display: none; } nav button { min-height: 46px; padding: 8px 12px; } }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 22px; min-width: 0; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 12px; }
+  .two { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 820px) { .two { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } }
+  h2 { font-size: 12px; font-weight: 600; margin: 0 0 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; overflow-wrap: anywhere; }
+  .stat .label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .stat .value { font-size: 34px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat .value.mono { font-family: var(--mono); font-weight: 500; font-size: 28px; }
+  .stat .sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .hero .value { font-size: 56px; }
+  @media (max-width: 640px) { .hero .value { font-size: 42px; } }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; }
+  tr:last-child td { border-bottom: 0; }
+  .mono { font-family: var(--mono); font-size: 13px; }
+  td.num { text-align: right; }
+  tr.row { cursor: pointer; }
+  tr.row:hover td { background: color-mix(in srgb, var(--fg) 4%, transparent); }
+  tr.row:focus-within td { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+  tr.row button { all: unset; cursor: pointer; display: block; width: 100%; }
+  .tablewrap { overflow-x: auto; margin: 0 -8px; }
+  .empty { padding: 40px 16px; text-align: center; color: var(--muted); }
+  .empty code, code { font-family: var(--mono); font-size: 13px; background: var(--soft); padding: 2px 7px; border-radius: 6px; }
+  .skeleton { height: 14px; border-radius: 6px; background: var(--soft); }
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton { animation: pulse 1.2s ease-in-out infinite; }
+    .flash td { animation: flash 1.4s ease-out; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    @keyframes flash { from { background: color-mix(in srgb, var(--ok) 20%, transparent); } }
+  }
+
+  /* Set up checklist */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--r-md); }
+  .steps .mark { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .steps li.done .mark { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .steps li.waiting .mark { border-color: var(--live); color: var(--live); }
+  .steps .title { font-weight: 600; }
+  .steps .desc { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+  .steps .val { font-family: var(--mono); font-size: 12.5px; color: var(--muted); align-self: center; }
+  pre { margin: 12px 0 0; padding: 12px 14px; background: var(--soft); border-radius: var(--r-md); font: 13px/1.7 var(--mono); overflow-x: auto; counter-reset: ln; }
+  pre .ln { display: block; white-space: pre; }
+  pre .ln::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 1.6em; margin-right: 12px; color: var(--muted); text-align: right; user-select: none; }
+
+  .err { color: var(--err); background: var(--err-bg); border-radius: var(--r-md); padding: 12px 14px; }
+  .ok { color: var(--ok); background: var(--ok-bg); border-radius: var(--r-md); padding: 12px 14px; }
+  .btn { min-height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-weight: 500; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.sm { min-height: 36px; padding: 0 14px; font-size: 13px; }
+  form .field { display: grid; gap: 6px; margin-bottom: 16px; }
+  label { font-size: 13.5px; font-weight: 500; }
+  input[type=text] { min-height: 46px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg); width: 100%; font-family: var(--mono); font-size: 14px; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .inline-err { font-size: 13px; color: var(--err); }
+  dialog { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--card); color: var(--fg); padding: 0; width: min(580px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(10,10,10,.45); }
+  .dhead { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: var(--display); font-weight: 600; letter-spacing: 0.08em; }
+  .dbody { padding: 20px; }
+  dl { display: grid; grid-template-columns: 110px 1fr; gap: 10px 14px; margin: 0; }
+  dt { color: var(--muted); font-size: 13px; padding-top: 2px; }
+  dd { margin: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="wordmark" href="#" aria-label="Trajan"><svg viewBox="2 16 44 26" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 40 V24 a6 6 0 0 1 12 0 V40 M18 40 V24 a6 6 0 0 1 12 0 V40 M30 40 V24 a6 6 0 0 1 12 0 V40"/><path d="M4 40 H44"/></svg>TRAJAN</a>
+    <div class="context">
+      <span class="seller" id="seller">…</span>
+      <span class="live" id="network">…</span>
+      <a class="addr" id="recipient" href="#" target="_blank" rel="noreferrer"></a>
+      <button class="btn sm" id="signOut">Sign out</button>
+    </div>
+  </header>
+
+  <nav role="tablist" aria-label="Steps">
+    <button role="tab" data-tab="setup" aria-selected="true"><span class="n">Step 1</span><span class="t">Set up</span></button>
+    <button role="tab" data-tab="paid" aria-selected="false"><span class="n">Step 2</span><span class="t">Get paid</span></button>
+    <button role="tab" data-tab="cashout" aria-selected="false"><span class="n">Step 3</span><span class="t">Cash out</span></button>
+  </nav>
+
+  <div id="error" class="err hidden" role="alert" style="margin-bottom:12px"></div>
+
+  <!-- Step 1: the flow, as a checklist -->
+  <section id="tab-setup" role="tabpanel">
+    <div class="two">
+      <div class="card">
+        <h2>Your seller is live when every step is green</h2>
+        <ol class="steps">
+          <li id="s-address"><span class="mark">1</span><div><div class="title">Payments go to your Tempo address</div><div class="desc">Every paid call settles here, in stablecoins, in about a second.</div></div><span class="val" id="s-address-val"></span></li>
+          <li id="s-price"><span class="mark">2</span><div><div class="title">Price per call</div><div class="desc">Agents are told the price and pay it before they get an answer.</div></div><span class="val" id="s-price-val"></span></li>
+          <li id="s-code"><span class="mark">3</span><div><div class="title">Connect your server</div><div class="desc">Run this in your server's folder, paste your API key when asked, then add the two lines it prints.</div><pre id="s-code-pre"></pre><div class="hint" style="margin-top:10px">Lost your key? <button type="button" class="btn sm" id="rotateKey">Make a new one</button> <span id="newKey" class="mono"></span></div></div><span class="val" id="s-code-val">waiting</span></li>
+          <li id="s-first"><span class="mark">4</span><div><div class="title">First payment</div><div class="desc" id="s-first-desc">Waiting for an agent to call a paid route…</div></div><span class="val" id="s-first-val"></span></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h2>How it works</h2>
+        <p style="margin:0 0 12px">An agent calls your tool. Your server answers <code>402</code> with the price. The agent pays on Tempo and asks again. It gets the answer; you get the money and a receipt.</p>
+        <p style="margin:0;color:var(--muted);font-size:13.5px">Nothing is held by Trajan. Funds land directly at your address. Step 3 is only there to move them somewhere else.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: the till -->
+  <section id="tab-paid" role="tabpanel" class="hidden">
+    <div class="grid">
+      <div class="card stat hero"><div class="label">Earned today</div><div class="value mono" id="revenueToday"><div class="skeleton" style="width:50%"></div></div><div class="sub" id="revenueTotal"></div></div>
+      <div class="card stat"><div class="label">Calls today</div><div class="value" id="callsToday"><div class="skeleton" style="width:40%"></div></div><div class="sub" id="callsTotal"></div></div>
+      <div class="card stat"><div class="label">Agents that paid</div><div class="value" id="payers"><div class="skeleton" style="width:40%"></div></div><div class="sub">unique payers, all time</div></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>Payments, live</h2>
+        <div class="tablewrap"><table aria-live="polite">
+          <thead><tr><th>When</th><th>What they called</th><th>Who paid</th><th class="num">Paid</th></tr></thead>
+          <tbody id="recent"><tr><td colspan="4"><div class="skeleton"></div></td></tr></tbody>
+        </table></div>
+        <div style="margin-top:14px"><button class="btn sm" id="more">Show more</button></div>
+      </div>
+      <div class="card">
+        <h2>Top agents</h2>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Agent</th><th class="num">Calls</th><th class="num">Paid</th></tr></thead>
+          <tbody id="top"><tr><td colspan="3"><div class="skeleton"></div></td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: move the money -->
+  <section id="tab-cashout" role="tabpanel" class="hidden">
+    <div class="two">
+      <div class="card">
+        <h2>Send to another address</h2>
+        <p class="hint" id="withdrawNote" style="margin:0 0 16px"></p>
+        <form id="withdrawForm" novalidate>
+          <div class="field"><label for="to">Send to (Tempo address)</label><input type="text" id="to" name="to" autocomplete="off" spellcheck="false" placeholder="0x…"><span class="inline-err" id="toErr"></span></div>
+          <div class="field"><label for="amount">Amount</label><input type="text" id="amount" name="amount" autocomplete="off" inputmode="decimal" placeholder="0.00"><span class="hint" id="amountHint"></span><span class="inline-err" id="amountErr"></span></div>
+          <div class="field"><label for="memo">Memo <span class="hint">(optional, goes on-chain)</span></label><input type="text" id="memo" name="memo" autocomplete="off" maxlength="64" placeholder="invoice 2026-10"></div>
+          <button class="btn primary" type="submit" id="withdrawBtn">Send</button>
+          <div id="withdrawResult" style="margin-top:14px"></div>
+        </form>
+      </div>
+      <div>
+        <div class="card stat" style="margin-bottom:12px"><div class="label">Balance at your address</div><div class="value mono" id="balance"><div class="skeleton" style="width:60%"></div></div><div class="sub" id="balanceSub">on Tempo, updates every 15s</div></div>
+        <div class="card"><h2>Your address</h2><dl><dt>Address</dt><dd id="wRecipient"></dd><dt>Token</dt><dd id="wToken"></dd></dl></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<dialog id="receipt" aria-labelledby="receiptTitle">
+  <div class="dhead"><span id="receiptTitle">Receipt</span><button class="btn sm" id="closeReceipt" aria-label="Close receipt">Close</button></div>
+  <div class="dbody"><dl id="receiptBody"></dl>
+    <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn sm" id="receiptExplorer" target="_blank" rel="noreferrer">Open in Tempo explorer</a>
+      <button class="btn sm" id="copyHash">Copy tx hash</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const base = ''
+  const $ = (id) => document.getElementById(id)
+  const api = (p, init) => fetch('/api/console' + p, init).then(async (r) => {
+    const j = await r.json().catch(() => ({}))
+    if (r.status === 401) { location.replace('/'); throw new Error('signed out') }
+    if (r.status === 404 && j.needsSetup) { location.replace('/'); throw new Error('no seller') }
+    if (!r.ok) throw new Error(j.error || r.statusText); return j })
+  const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '—'
+  const when = (iso) => { const d = new Date(iso), diff = (Date.now() - d) / 1000
+    if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff / 60) + 'm ago'; if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'; return d.toLocaleDateString() }
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  let meta = {}, seen = new Set(), offset = 0, calls = [], hadCalls = null
+
+  function show(tab) {
+    document.querySelectorAll('[role=tab]').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.tab === tab)))
+    document.querySelectorAll('[role=tabpanel]').forEach((p) => p.classList.toggle('hidden', p.id !== 'tab-' + tab))
+    if (tab === 'cashout') loadBalance()
+  }
+  document.querySelectorAll('[role=tab]').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)))
+
+  function row(c) {
+    return `<tr class="row" data-hash="${esc(c.tx_hash)}"><td><button type="button">${when(c.created_at)}</button></td><td class="mono">${esc(c.route)}</td><td class="mono" title="${esc(c.payer || '')}">${short(c.payer)}</td><td class="num mono">${esc(c.amountFormatted)}</td></tr>`
+  }
+  const empty = (cols) => `<tr><td colspan="${cols}"><div class="empty">No payments yet. The first paid call shows up here within a second.</div></td></tr>`
+  function bind(tb) { tb.querySelectorAll('tr.row').forEach((tr) => tr.querySelector('button').addEventListener('click', () => openReceipt(tr.dataset.hash))) }
+
+  async function loadMeta() {
+    meta = await api('/meta')
+    $('seller').textContent = meta.name
+    $('network').textContent = meta.network === 'mainnet' ? 'Live on Tempo' : 'Live on Tempo Moderato testnet'
+    if (meta.recipient) { $('recipient').textContent = short(meta.recipient); $('recipient').href = meta.explorerAddr + meta.recipient; $('recipient').title = meta.recipient }
+    $('wRecipient').textContent = meta.recipient || '—'; $('wToken').textContent = meta.token || '—'
+    // Step 1 checklist
+    if (meta.recipient) { $('s-address').classList.add('done'); $('s-address-val').textContent = short(meta.recipient) }
+    if (meta.price) { $('s-price').classList.add('done'); $('s-price-val').textContent = meta.price + ' USD' }
+    $('s-code').classList.add('done')
+    const snippet = meta.snippet || "app.get('/your-route', paid(), handler)\nmountTrajan(app)"
+    $('s-code-pre').innerHTML = snippet.split('\n').map((l) => `<span class="ln">${esc(l)}</span>`).join('')
+    $('withdrawNote').textContent = meta.canWithdraw
+      ? 'Sends from your address. Settles on Tempo in about a second.'
+      : 'Trajan Cloud never holds your key, so sending from here is off for now. Your funds are already at your address; send from your passkey wallet. In-browser passkey withdraw is next.'
+    $('withdrawForm').querySelectorAll('input,button').forEach((el) => el.disabled = !meta.canWithdraw)
+  }
+
+  function firstPayment(s, recent) {
+    const li = $('s-first')
+    if (s.calls > 0) {
+      li.classList.remove('waiting'); li.classList.add('done')
+      $('s-code').classList.add('done'); $('s-code-val').textContent = 'connected'
+      const f = recent[recent.length - 1]
+      $('s-first-desc').textContent = 'Received. Everything after this is Step 2.'
+      $('s-first-val').textContent = f ? f.amountFormatted + ' USD' : ''
+      document.querySelector('[data-tab="paid"] .n').innerHTML = 'Step 2 · <span class="done">live</span>'
+    } else { li.classList.add('waiting'); $('s-first-val').textContent = 'waiting' }
+    // First load: land on the step that matters. First payment while watching Step 1: move along after a beat.
+    if (hadCalls === null) { hadCalls = s.calls > 0; show(hadCalls ? 'paid' : 'setup') }
+    else if (!hadCalls && s.calls > 0) { hadCalls = true; setTimeout(() => show('paid'), 1500) }
+  }
+
+  async function refresh() {
+    try {
+      const [s, recent] = await Promise.all([api('/stats'), api('/calls?limit=8')])
+      $('error').classList.add('hidden')
+      $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = s.revenue + ' all time'
+      $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = s.calls + ' all time'
+      $('payers').textContent = s.payers
+      firstPayment(s, recent)
+      const tb = $('recent'), key = recent.map((c) => c.tx_hash + ':' + (c.payer || '')).join('|')
+      if (tb.dataset.key !== key) {
+        tb.dataset.key = key
+        tb.innerHTML = recent.length ? recent.map(row).join('') : empty(4)
+        tb.querySelectorAll('tr.row').forEach((tr) => { if (seen.size && !seen.has(tr.dataset.hash)) tr.classList.add('flash') })
+        recent.forEach((c) => seen.add(c.tx_hash)); bind(tb)
+        calls = recent; offset = recent.length; $('more').disabled = recent.length < 8
+      } else {
+        tb.querySelectorAll('tr.row').forEach((tr) => { const c = recent.find((x) => x.tx_hash === tr.dataset.hash); if (c) tr.querySelector('button').textContent = when(c.created_at) })
+      }
+      const topKey = JSON.stringify(s.topPayers)
+      if ($('top').dataset.key !== topKey) { $('top').dataset.key = topKey
+        $('top').innerHTML = s.topPayers.length ? s.topPayers.map((p) => `<tr><td class="mono" title="${esc(p.payer)}">${short(p.payer)}</td><td class="num">${p.calls}</td><td class="num mono">${esc(p.revenue)}</td></tr>`).join('') : `<tr><td colspan="3" class="empty">No agents yet</td></tr>` }
+    } catch (e) {
+      $('error').textContent = 'Can\'t reach the console API: ' + e.message + ' — retrying.'; $('error').classList.remove('hidden')
+    }
+  }
+
+  async function loadMore() {
+    const page = await api('/calls?limit=50&offset=' + offset)
+    calls = calls.concat(page); offset += page.length
+    const tb = $('recent'); tb.dataset.key = 'expanded:' + offset
+    tb.innerHTML = calls.map(row).join(''); bind(tb)
+    $('more').disabled = page.length < 50
+  }
+  $('more').addEventListener('click', loadMore)
+
+  async function loadBalance() {
+    if (!meta.recipient) { $('balance').textContent = '—'; $('balanceSub').textContent = 'no address configured'; return }
+    try { const b = await api('/balance'); $('balance').textContent = b.formatted; $('amountHint').textContent = 'Available: ' + b.formatted }
+    catch { $('balance').textContent = '—'; $('balanceSub').textContent = 'balance unavailable right now' }
+  }
+
+  async function openReceipt(hash) {
+    const c = await api('/calls/' + hash)
+    const fee = c.fee_payer == null ? '…' : (c.payer && c.fee_payer.toLowerCase() !== c.payer.toLowerCase() ? 'sponsored by you (' + short(c.fee_payer) + ')' : 'paid by the agent')
+    $('receiptBody').innerHTML = [
+      ['Called', (c.http_method === 'MCP' ? 'tool ' : c.http_method + ' ') + c.route], ['Paid', c.amountFormatted + ' USD'], ['By', c.payer || 'resolving…'], ['To', c.recipient],
+      ['Fee', fee], ['Tx hash', c.tx_hash], ['Block', c.block_number ?? '…'], ['Time', new Date(c.created_at).toLocaleString()], ['Memo', c.memo || '—'],
+    ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')
+    $('receiptExplorer').href = c.explorerUrl
+    $('copyHash').onclick = () => navigator.clipboard.writeText(c.tx_hash).then(() => { $('copyHash').textContent = 'Copied'; setTimeout(() => $('copyHash').textContent = 'Copy tx hash', 1200) })
+    $('receipt').showModal()
+  }
+  $('closeReceipt').addEventListener('click', () => $('receipt').close())
+
+  $('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const to = $('to').value.trim(), amount = $('amount').value.trim(), memo = $('memo').value.trim()
+    $('toErr').textContent = /^0x[0-9a-fA-F]{40}$/.test(to) ? '' : 'Enter a 0x address (40 hex characters).'
+    $('amountErr').textContent = /^\d+(\.\d{1,6})?$/.test(amount) && Number(amount) > 0 ? '' : 'Enter a positive amount, up to 6 decimals.'
+    if ($('toErr').textContent || $('amountErr').textContent) return
+    $('withdrawBtn').disabled = true; $('withdrawBtn').textContent = 'Sending…'; $('withdrawResult').innerHTML = ''
+    try {
+      const r = await api('/withdraw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, amount, memo }) })
+      $('withdrawResult').innerHTML = `<div class="ok">Sent ${esc(r.formatted ?? amount)} · <a href="${esc(r.explorerUrl)}" target="_blank" rel="noreferrer">view on Tempo</a></div>`
+      $('withdrawForm').reset(); loadBalance()
+    } catch (err) {
+      $('withdrawResult').innerHTML = `<div class="err">${esc(err.message)} <button type="button" class="btn sm" id="retryW">Try again</button></div>`
+      $('retryW').onclick = () => $('withdrawForm').requestSubmit()
+    } finally { $('withdrawBtn').disabled = false; $('withdrawBtn').textContent = 'Send' }
+  })
+
+  $('signOut').onclick = async () => { await fetch('/auth/logout', { method: 'POST' }).catch(() => {}); location.replace('/') }
+  loadMeta().then(() => { refresh(); loadBalance() }).catch((e) => { $('error').textContent = e.message; $('error').classList.remove('hidden') })
+  setInterval(refresh, 2000)
+  setInterval(loadBalance, 15000)
+})()
+</script>
+</body>
+</html>

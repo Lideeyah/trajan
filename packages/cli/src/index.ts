@@ -10,6 +10,9 @@ function parseFlags(args: string[]): InitFlags & { _: string[] } {
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!
     if (a === '-y' || a === '--yes') out.yes = true
+    else if (a === '--cloud') out.cloud = true
+    else if (a === '--api-key') { out.apiKey = args[i + 1]; i++ }
+    else if (a === '--cloud-url') { out.cloudUrl = args[i + 1]; i++ }
     else if (a.startsWith('--')) { out[a.slice(2)] = args[i + 1]; i++ }
     else out._.push(a)
   }
@@ -25,6 +28,8 @@ const usage = `trajan — payable APIs on Tempo, plus the seller console
       --network moderato|mainnet
       --framework hono|express|mcp
       --currency 0x...     TIP-20 token address (mainnet only; Moderato defaults to pathUSD)
+      --cloud              also report calls to your Trajan Cloud console (asks for your API key)
+      --api-key trj_...    Trajan Cloud key (with --cloud --yes)
 `
 
 try {
