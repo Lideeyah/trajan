@@ -22,6 +22,7 @@ const transport = new StdioClientTransport({
   args: ['--no-warnings=ExperimentalWarning', '--env-file=.env', '--import', 'tsx', 'src/server.ts'],
   cwd: serverDir,
   stderr: 'pipe',
+  env: { ...process.env } as Record<string, string>, // the SDK strips custom vars by default
 })
 const client = new Client({ name: 'trajan-buyer', version: '0.1.0' })
 await client.connect(transport)

@@ -78,7 +78,7 @@ export function registerPaidTool<A, R extends CallToolResult>(
 }
 
 /** The MCP server has no HTTP surface of its own, so serve the console on its own port. */
-export function startTrajanApi(port: number = config.apiPort) {
+export function startTrajanApi(port: number = Number(process.env.TRAJAN_CONSOLE_PORT ?? config.apiPort)) {
   const app = new Hono().route('/trajan', console_)
   return serve({ fetch: app.fetch, port }, () => console.error(`trajan console on http://localhost:${port}/trajan`))
 }

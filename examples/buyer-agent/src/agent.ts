@@ -29,6 +29,7 @@ const transport = new StdioClientTransport({
   args: ['--no-warnings=ExperimentalWarning', '--env-file=.env', '--import', 'tsx', 'src/server.ts'],
   cwd: resolve(here, '../../mcp-tools'),
   stderr: 'pipe',
+  env: { ...process.env } as Record<string, string>, // the SDK strips custom vars by default
 })
 const mcp = new Client({ name: 'trajan-agent', version: '0.1.0' })
 await mcp.connect(transport)
