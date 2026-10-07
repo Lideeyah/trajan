@@ -1,0 +1,13 @@
+{
+  "name": "@trajan/example-buyer-agent",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "pay": "node --env-file=../mcp-server/.env --import tsx src/pay-once.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": true
+}
