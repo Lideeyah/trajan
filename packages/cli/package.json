@@ -1,0 +1,11 @@
+{
+  "name": "trajan",
+  "version": "0.1.0",
+  "description": "One command to make your API or MCP server payable by AI agents on Tempo, plus the seller console.",
+  "private": true,
+  "type": "module",
+  "bin": { "trajan": "./bin/trajan.js" },
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "dev": "tsx src/index.ts" },
+  "license": "MIT"
+}

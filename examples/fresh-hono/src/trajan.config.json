@@ -1,0 +1,8 @@
+{
+  "recipient": "0xdC0c0024CE466b0FA4A6974534265D3B7eD23aeC",
+  "currency": "0x20c0000000000000000000000000000000000000",
+  "price": "0.02",
+  "db": ".trajan/calls.db",
+  "apiPort": 8788,
+  "network": "moderato"
+}
