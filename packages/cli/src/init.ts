@@ -23,9 +23,11 @@ export type InitFlags = {
 
 function detectFramework(pkg: any): Framework | null {
   const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) }
+  // Express before Hono: init adds hono as a dependency (the console uses it), so a second run
+  // on an Express project would otherwise flip the template.
   if (deps['@modelcontextprotocol/sdk']) return 'mcp'
-  if (deps.hono) return 'hono'
   if (deps.express) return 'express'
+  if (deps.hono) return 'hono'
   return null
 }
 
