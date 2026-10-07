@@ -126,22 +126,37 @@ import { Mppx, Transport, tempo } from 'mppx/server'${common(c)}
 export const mppx = Mppx.create({
   methods: [${chargeMethod(c)}],
   secretKey: process.env.MPP_SECRET_KEY,
+  realm: config.name,
   transport: Transport.mcpSdk(),
 })
 ${tail(c)}
 type ToolHandler<A, R> = (args: A, extra: any) => Promise<R>
+type PaidOptions = { amount?: string; name?: string }
 
 /**
- * Wrap an MCP tool handler so it requires payment:
- *   server.registerTool('search', { ... }, paid(async (args) => ({ content: [...] })))
+ * Wrap an MCP tool handler so it requires payment. Pass the tool name so the console
+ * can show it (MCP calls have no HTTP path):
+ *   server.registerTool('search', { ... }, paid(async (args) => ({ content: [...] }), { name: 'search' }))
  * An unpaid call returns the MPP challenge; a paid call runs the handler and attaches the receipt.
  */
-export function paid<A, R extends { content: unknown[] }>(handler: ToolHandler<A, R>, amount: string = config.price) {
+export function paid<A, R extends { content: unknown[] }>(handler: ToolHandler<A, R>, opts: PaidOptions | string = {}) {
+  const { amount = config.price, name } = typeof opts === 'string' ? { amount: opts } : opts
   return async (args: A, extra: any) => {
-    const result = await mppx.charge({ amount })(extra)
+    const result = await mppx.charge({ amount, description: name })(extra)
     if (result.status === 402) throw result.challenge
     return result.withReceipt(await handler(args, extra))
   }
+}
+
+/** registerTool + paid in one call, so the tool name is only written once. */
+export function registerPaidTool<A, R extends { content: unknown[] }>(
+  server: { registerTool: (name: string, cfg: any, cb: any) => unknown },
+  name: string,
+  cfg: Record<string, unknown>,
+  handler: ToolHandler<A, R>,
+  amount: string = config.price,
+) {
+  return server.registerTool(name, cfg, paid(handler, { amount, name }))
 }
 
 /** The MCP server has no HTTP surface of its own, so serve the console on its own port. */
@@ -169,8 +184,8 @@ export function nextSteps(c: Config, file: string) {
       `mountTrajan(app)                          // console at /trajan`,
     ],
     mcp: [
-      `import { paid, startTrajanApi } from './${file}'`,
-      `server.registerTool('name', { ... }, paid(async (args) => ({ content: [...] })))`,
+      `import { registerPaidTool, startTrajanApi } from './${file}'`,
+      `registerPaidTool(server, 'name', { description, inputSchema }, async (args) => ({ content: [...] }))`,
       `startTrajanApi()                          // console on :${c.apiPort}/trajan`,
     ],
   }

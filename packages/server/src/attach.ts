@@ -33,8 +33,9 @@ export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions)
         amount: String(req.amount ?? ''),
         currency: String(req.currency ?? ctx.receipt.fundingCurrency ?? ''),
         recipient: String(req.recipient ?? ''),
-        route: url ? url.pathname + url.search : String(ctx.challenge?.opaque ?? ''),
-        http_method: input?.method ?? 'GET',
+        // HTTP: the path. MCP (no HTTP input): the tool name, carried in the charge description.
+        route: url ? url.pathname + url.search : String(req.description ?? ctx.challenge?.opaque ?? ''),
+        http_method: input?.method ?? (url ? 'GET' : 'MCP'),
         memo: null,
         block_number: null,
         created_at: ctx.receipt.timestamp ?? new Date().toISOString(),
