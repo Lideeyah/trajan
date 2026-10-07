@@ -22,19 +22,26 @@ export const MAINNET_RPC = 'https://rpc.tempo.xyz'
 export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions) {
   return mppx.onPaymentSuccess((ctx) => {
     try {
+      if (process.env.TRAJAN_DEBUG) {
+        const { input: _i, ...rest } = ctx
+        console.error('[trajan] payment.success ctx:', JSON.stringify(rest, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 2).slice(0, 3000))
+      }
       const req = ctx.request ?? {}
       const input: Request | undefined = ctx.input instanceof Request ? ctx.input : undefined
       const url = input ? new URL(input.url) : undefined
       const txHash: string = ctx.receipt.reference
+      // Payer is in the credential source (did:pkh:eip155:<chainId>:<address>); block comes from RPC later.
+      const did: string | undefined = ctx.credential?.source
+      const payer = did && /^did:pkh:eip155:\d+:(0x[0-9a-fA-F]{40})$/.test(did) ? did.split(':').pop()!.toLowerCase() : null
       const row = {
         challenge_id: String(ctx.challenge?.id ?? txHash),
         tx_hash: txHash,
-        payer: null,
+        payer,
         amount: String(req.amount ?? ''),
         currency: String(req.currency ?? ctx.receipt.fundingCurrency ?? ''),
         recipient: String(req.recipient ?? ''),
         // HTTP: the path. MCP (no HTTP input): the tool name, carried in the charge description.
-        route: url ? url.pathname + url.search : String(req.description ?? ctx.challenge?.opaque ?? ''),
+        route: url ? url.pathname + url.search : String(ctx.challenge?.description ?? req.description ?? ''),
         http_method: input?.method ?? (url ? 'GET' : 'MCP'),
         memo: null,
         block_number: null,
@@ -44,7 +51,7 @@ export function attachCallLog(mppx: MppxLike, log: CallLog, opts: AttachOptions)
       opts.onCall?.(row)
       // Enrich out of band; errors here must never affect the payment path.
       void resolveTx(opts.rpcUrl, txHash)
-        .then((tx) => { if (tx) log.enrich(txHash, tx.from, tx.blockNumber) })
+        .then((tx) => { if (tx) log.enrich(txHash, payer ?? tx.from, tx.blockNumber) })
         .catch(() => {})
     } catch {
       // Hook errors are swallowed by mppx anyway; be explicit that we don't care.

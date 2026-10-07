@@ -47,7 +47,7 @@ export function createCallLog(dbPath: string) {
     INSERT OR IGNORE INTO calls (challenge_id, tx_hash, payer, amount, currency, recipient, route, http_method, memo, block_number, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  const enrich = db.prepare(`UPDATE calls SET payer = ?, block_number = ? WHERE tx_hash = ? AND payer IS NULL`)
+  const enrich = db.prepare(`UPDATE calls SET payer = COALESCE(payer, ?), block_number = COALESCE(block_number, ?) WHERE tx_hash = ?`)
   const list = db.prepare(`SELECT * FROM calls ORDER BY id DESC LIMIT ? OFFSET ?`)
   const byHash = db.prepare(`SELECT * FROM calls WHERE tx_hash = ?`)
   const stats = db.prepare(`
