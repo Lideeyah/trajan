@@ -105,7 +105,7 @@ export async function init(flags: InitFlags) {
     if (!key) throw new Error('--cloud needs --api-key trj_… (or run without --yes)')
     const cur = readFileSync(envPath, 'utf8')
     const withoutOld = cur.split('\n').filter((l) => !/^TRAJAN_(API_KEY|CLOUD_URL)=/.test(l)).join('\n')
-    writeFileSync(envPath, `${withoutOld.replace(/\n*$/, '\n')}TRAJAN_API_KEY=${key}\nTRAJAN_CLOUD_URL=${flags.cloudUrl ?? 'https://trajan.vercel.app'}\n`)
+    writeFileSync(envPath, `${withoutOld.replace(/\n*$/, '\n')}TRAJAN_API_KEY=${key}\nTRAJAN_CLOUD_URL=${flags.cloudUrl ?? 'https://trajan-five.vercel.app'}\n`)
   }
   const gi = join(dir, '.gitignore')
   const gitignore = existsSync(gi) ? readFileSync(gi, 'utf8') : ''

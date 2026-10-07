@@ -52,7 +52,7 @@ export const log = createCallLog(config.db)
 attachCallLog(mppx, log, {
   rpcUrl: ${n.rpc},
   // Trajan Cloud: set TRAJAN_CLOUD_URL + TRAJAN_API_KEY (written by \`trajan init --cloud\`) to see calls in your hosted console.
-  cloud: process.env.TRAJAN_API_KEY ? { url: (process.env.TRAJAN_CLOUD_URL ?? 'https://trajan.vercel.app') + '/ingest', apiKey: process.env.TRAJAN_API_KEY } : undefined,
+  cloud: process.env.TRAJAN_API_KEY ? { url: (process.env.TRAJAN_CLOUD_URL ?? 'https://trajan-five.vercel.app') + '/ingest', apiKey: process.env.TRAJAN_API_KEY } : undefined,
 })
 
 /** Balance always; withdraw only when TRAJAN_WITHDRAW_KEY (the recipient's key) is set. */
