@@ -7,9 +7,8 @@ if (!key) throw new Error('TEMPO_BUYER_PRIVATE_KEY missing')
 const account = privateKeyToAccount(key)
 console.log('buyer', account.address)
 
-// FEE_PAYER=1 asks the seller to sponsor the fee; the balance delta then equals the price exactly.
-const sponsored = process.env.FEE_PAYER === '1'
-const mppx = Mppx.create({ methods: [tempo({ account, feePayer: sponsored })], polyfill: false })
+// Fee sponsorship is the seller's call: when the 402 advertises feePayer, mppx signs a fee-delegated tx.
+const mppx = Mppx.create({ methods: [tempo({ account })], polyfill: false })
 const url = process.env.SELLER_URL ?? 'http://localhost:8787/tools/echo?q=trajan'
 
 const PATHUSD = '0x20c0000000000000000000000000000000000000'
@@ -21,7 +20,7 @@ const balance = async () => {
 const before = await balance()
 const res = await mppx.fetch(url)
 const after = await balance()
-console.log(`sponsored=${sponsored} spent=${(before - after).toString()} base units (price 10000 => fee ${(before - after - 10000n).toString()})`)
+console.log(`spent ${(before - after).toString()} base units (price 10000; Tempo fees are sub-unit at 6 decimals)`)
 console.log('status', res.status)
 console.log('body', await res.text())
 for (const [k, v] of res.headers) if (/payment|receipt/i.test(k)) console.log('header', k, '=', v.slice(0, 400))

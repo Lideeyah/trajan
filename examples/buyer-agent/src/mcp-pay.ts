@@ -27,7 +27,7 @@ const client = new Client({ name: 'trajan-buyer', version: '0.1.0' })
 await client.connect(transport)
 transport.stderr?.on('data', (d) => process.stderr.write(`[seller] ${d}`))
 
-McpClient.wrap(client, { methods: [tempo({ account, feePayer: true })] })
+McpClient.wrap(client, { methods: [tempo({ account })] })
 
 const { tools } = await client.listTools()
 console.log('tools:', tools.map((t) => `${t.name} — ${t.description}`).join('\n       '))

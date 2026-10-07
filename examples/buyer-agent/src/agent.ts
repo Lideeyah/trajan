@@ -33,7 +33,7 @@ const transport = new StdioClientTransport({
 const mcp = new Client({ name: 'trajan-agent', version: '0.1.0' })
 await mcp.connect(transport)
 transport.stderr?.on('data', (d) => { const s = String(d); if (!s.includes('[mppx]')) process.stderr.write(`[seller] ${s}`) })
-McpClient.wrap(mcp, { methods: [tempo({ account, feePayer: true })] })
+McpClient.wrap(mcp, { methods: [tempo({ account })] })
 
 // 2. Expose the seller's tools to Claude.
 const { tools: mcpTools } = await mcp.listTools()
