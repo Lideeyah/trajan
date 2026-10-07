@@ -59,7 +59,7 @@
       <div id="authErr" class="err hidden" role="alert"></div>
     </div>
     <div class="cards">
-      <div class="card"><div class="step">Step 1</div><h3>SET UP</h3><p>Sign up, name your seller, set a price. Run <code>npx trajan init --cloud</code> in your server. Add the two lines it prints.</p></div>
+      <div class="card"><div class="step">Step 1</div><h3>SET UP</h3><p>Sign up, name your seller, set a price. Run <code>npx trajan-cli init --cloud</code> in your server. Add the two lines it prints.</p></div>
       <div class="card"><div class="step">Step 2</div><h3>GET PAID</h3><p>An agent calls your tool, gets a 402 with the price, pays, and gets its answer. You see the receipt here.</p></div>
       <div class="card"><div class="step">Step 3</div><h3>CASH OUT</h3><p>Funds are already at your address — nothing is held by Trajan. Move them whenever you like.</p></div>
     </div>
@@ -135,7 +135,7 @@
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || r.statusText)
       $('apiKey').textContent = j.apiKey
-      $('installPre').textContent = `npx trajan init --cloud\n# paste the key when asked, then add the two lines it prints`
+      $('installPre').textContent = `npx trajan-cli init --cloud\n# paste the key when asked, then add the two lines it prints`
       show('created')
     } catch (err) { $('setupErr').textContent = err.message; $('setupErr').classList.remove('hidden') }
     finally { $('setupBtn').disabled = false }

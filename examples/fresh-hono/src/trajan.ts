@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import type { Hono } from 'hono'
 import { Mppx, tempo } from 'mppx/hono'
 import { privateKeyToAccount } from 'viem/accounts'
-import { createCallLog, attachCallLog, createWallet, trajanConsole, MODERATO_RPC, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS } from '@trajan/server'
+import { createCallLog, attachCallLog, createWallet, trajanConsole, MODERATO_RPC, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS } from 'trajan-server'
 
 const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.meta.url), 'utf8')) as {
   name: string; recipient: `0x${string}`; currency: `0x${string}`; price: string; db: string; apiPort: number

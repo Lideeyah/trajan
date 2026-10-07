@@ -1,8 +1,36 @@
 {
-  "name": "@trajan/server",
+  "name": "trajan-server",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "peerDependencies": { "hono": "*", "mppx": "*" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "hono": ">=4",
+    "mppx": ">=0.13",
+    "viem": ">=2.57"
+  },
+  "description": "Seller tooling for the Machine Payments Protocol on Tempo: call log, console, wallet helpers over mppx.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lideeyah/trajan.git",
+    "directory": "packages/server"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && cp src/console.html dist/console.html",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
 }

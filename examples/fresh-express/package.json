@@ -8,8 +8,8 @@
   "dependencies": {
     "express": "^5",
     "mppx": "^0.13.1",
-    "@trajan/server": "^0.1.0",
     "hono": "^4",
-    "viem": "^2"
+    "viem": "^2",
+    "trajan-server": "*"
   }
 }

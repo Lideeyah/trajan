@@ -8,7 +8,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import {
   createCallLog, attachCallLog, createWallet, trajanConsole,
   MODERATO_RPC, MODERATO_TOKENS, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS,
-} from '@trajan/server'
+} from 'trajan-server'
 
 const RECIPIENT = process.env.TEMPO_RECIPIENT as `0x${string}`
 const SECRET = process.env.MPP_SECRET_KEY

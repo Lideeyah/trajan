@@ -27,7 +27,7 @@ const net = (c: Config) => (c.network === 'moderato'
 const common = (c: Config) => {
   const n = net(c)
   return `
-import { createCallLog, attachCallLog, createWallet, trajanConsole, ${n.rpc}, ${n.tx}, ${n.addr} } from '@trajan/server'
+import { createCallLog, attachCallLog, createWallet, trajanConsole, ${n.rpc}, ${n.tx}, ${n.addr} } from 'trajan-server'
 
 const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.meta.url), 'utf8')) as {
   name: string; recipient: \`0x\${string}\`; currency: \`0x\${string}\`; price: string; db: string; apiPort: number

@@ -39,9 +39,11 @@ Open `http://localhost:8787/trajan`. The call is there within two seconds: route
 
 ```bash
 cd your-server
-npx trajan init           # asks: framework (auto-detected), Tempo address, price per call
-npm install
+npx trajan-cli init           # asks: framework (auto-detected), Tempo address, price per call
+npm install                   # pulls in trajan-server, mppx, hono, viem
 ```
+
+Hosted console instead of self-hosting? Sign up at [trajan-five.vercel.app](https://trajan-five.vercel.app) with a passkey, then `npx trajan-cli init --cloud` and paste your key.
 
 `init` writes `src/trajan.ts` and `src/trajan.config.json`, adds `MPP_SECRET_KEY` to `.env`, and prints three lines. It never edits your route files.
 
@@ -64,7 +66,7 @@ registerPaidTool(server, 'search', { description, inputSchema }, async (args) =>
 startTrajanApi()                            // console on :8788/trajan (stdio servers have no HTTP of their own)
 ```
 
-Non-interactive: `npx trajan init --yes --recipient 0x… --price 0.01 [--network moderato|mainnet] [--framework hono|express|mcp]`.
+Non-interactive: `npx trajan-cli init --yes --recipient 0x… --price 0.01 [--network moderato|mainnet] [--framework hono|express|mcp]`.
 
 ### Optional env
 
@@ -110,8 +112,9 @@ or in code: `createClient({ account, testnet: true }).faucet.fundSync({ account 
 ## Repo layout
 
 ```
-packages/cli          trajan init
-packages/server       call log (SQLite), mppx hook, console page + JSON API, wallet
+packages/cli          trajan-cli — `trajan init`
+packages/server       trajan-server — call log (SQLite), mppx hook, console page + JSON API, wallet
+apps/cloud            Trajan Cloud — hosted console with passkey accounts (Vercel + Neon)
 examples/mcp-server   HTTP demo seller (Hono) — the one the quickstart runs
 examples/mcp-tools    MCP demo seller (stdio) with two paid tools
 examples/fresh-hono   a bare app set up with `trajan init`, kept as the init test

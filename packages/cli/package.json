@@ -1,11 +1,27 @@
 {
-  "name": "trajan",
+  "name": "trajan-cli",
   "version": "0.1.0",
   "description": "One command to make your API or MCP server payable by AI agents on Tempo, plus the seller console.",
-  "private": true,
   "type": "module",
-  "bin": { "trajan": "./bin/trajan.js" },
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "dev": "tsx src/index.ts" },
-  "license": "MIT"
+  "bin": {
+    "trajan": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "dev": "tsx src/index.ts"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lideeyah/trajan.git",
+    "directory": "packages/cli"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.5"
+  }
 }
