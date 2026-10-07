@@ -38,6 +38,8 @@ app.route('/auth', auth)
 app.get('/', (c) => c.html(pages.index))
 app.get('/console', (c) => c.html(pages.console))
 app.get('/client.js', (c) => c.body(clientBundle(), 200, { 'content-type': 'application/javascript; charset=utf-8', 'cache-control': 'public, max-age=300' }))
+app.get('/favicon.svg', (c) => c.body(readFileSync(new URL('../public/favicon.svg', import.meta.url), 'utf8'), 200, { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400' }))
+app.get('/favicon.ico', (c) => c.redirect('/favicon.svg?v=2'))
 
 // ---- session helpers ----
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')

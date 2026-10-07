@@ -114,7 +114,7 @@ export async function init(flags: InitFlags) {
 
   // 3. deps (added to package.json; the seller runs their own install)
   pkg.dependencies ??= {}
-  const want: Record<string, string> = { mppx: '^0.13.1', 'trajan-server': '^0.1.0', hono: '^4', viem: '^2' }
+  const want: Record<string, string> = { mppx: '^0.13.1', 'trajan-server': '^0.1.1', hono: '^4', viem: '^2' }
   if (framework === 'mcp') want['@hono/node-server'] = '^1'
   const added: string[] = []
   for (const [name, ver] of Object.entries(want)) if (!pkg.dependencies[name]) { pkg.dependencies[name] = ver; added.push(name) }
