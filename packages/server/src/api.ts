@@ -29,6 +29,15 @@ export const MAINNET_EXPLORER_ADDRESS = 'https://explore.tempo.xyz/address/'
 
 const PAGE = readFileSync(new URL('./console.html', import.meta.url), 'utf8')
 
+const CSV_COLS = ['created_at', 'route', 'http_method', 'amount', 'currency', 'payer', 'recipient', 'fee_payer', 'tx_hash', 'block_number', 'challenge_id', 'memo'] as const
+function toCsv(rows: Record<string, unknown>[], fmtAmount: (raw: string | number) => string) {
+  const esc = (v: unknown) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
+  const head = [...CSV_COLS, 'amount_formatted'].join(',')
+  const body = rows.map((r) => [...CSV_COLS.map((k) => esc(r[k])), esc(fmtAmount(r.amount as string))].join(','))
+  return [head, ...body].join('\n') + '\n'
+}
+
+
 export function trajanConsole(log: CallLog, opts: ConsoleOptions = {}) {
   const decimals = opts.decimals ?? 6
   const explorerTx = opts.explorerTxBase ?? MODERATO_EXPLORER_TX
@@ -65,6 +74,12 @@ export function trajanConsole(log: CallLog, opts: ConsoleOptions = {}) {
     const limit = Math.min(Number(c.req.query('limit') ?? 50), 200)
     const offset = Number(c.req.query('offset') ?? 0)
     return c.json(log.list(limit, offset).map(shape))
+  })
+
+  app.get('/api/calls.csv', (c) => {
+    const rows: Record<string, unknown>[] = []
+    for (let off = 0; ; off += 200) { const page = log.list(200, off); rows.push(...page); if (page.length < 200) break }
+    return c.body(toCsv(rows, fmt), 200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="trajan-calls-${new Date().toISOString().slice(0, 10)}.csv"` })
   })
 
   app.get('/api/calls/:hash', (c) => {

@@ -79,7 +79,7 @@ Non-interactive: `npx trajan-cli init --yes --recipient 0x… --price 0.01 [--ne
 
 - **Overview** — revenue today / all time, calls, unique payers, on-chain balance; latest calls (new ones flash in); top payers.
 - **Calls** — full history, load more.
-- **Receipt** — route or tool name, amount, payer, recipient, tx hash, block, fee (caller or sponsored), challenge id, memo; open in explorer, copy hash.
+- **Receipt** — route or tool name, amount, payer, recipient, tx hash, block, fee (caller or sponsored), challenge id, memo; open in explorer, copy hash. **Export CSV** of every call for your books.
 - **Withdraw** — to-address, amount, optional on-chain memo. Settles in about a second.
 
 One HTML page served by your own process. No build step. Light/dark automatic. Data lives in `.trajan/calls.db` (SQLite); nothing leaves your machine unless you deploy it.
@@ -124,6 +124,10 @@ examples/buyer-agent  Claude agent + non-LLM buyers
 ## Built with
 
 Tempo (Moderato testnet) · Machine Payments Protocol · mppx 0.13 · viem/tempo · TIP-20 transfers with memos · Tempo fee sponsorship · Hono · Express · Model Context Protocol SDK · node:sqlite · Anthropic Claude (demo agent only)
+
+## Security
+
+Non-custodial by design: Trajan never holds buyers' or sellers' funds, and Trajan Cloud never holds a seller's key (a passkey is the account). Full model, what's optional, and what isn't audited: [SECURITY.md](SECURITY.md).
 
 ## Limits
 

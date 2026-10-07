@@ -167,7 +167,7 @@
           <thead><tr><th>When</th><th>What they called</th><th>Who paid</th><th class="num">Paid</th></tr></thead>
           <tbody id="recent"><tr><td colspan="4"><div class="skeleton"></div></td></tr></tbody>
         </table></div>
-        <div style="margin-top:14px"><button class="btn sm" id="more">Show more</button></div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="more">Show more</button><a class="btn sm" id="exportCsv" href="#" download>Export CSV</a></div>
       </div>
       <div class="card">
         <h2>Top agents</h2>
@@ -301,6 +301,7 @@
     $('more').disabled = page.length < 50
   }
   $('more').addEventListener('click', loadMore)
+  $('exportCsv').href = base + '/api/calls.csv'
 
   async function loadBalance() {
     if (!meta.recipient) { $('balance').textContent = '—'; $('balanceSub').textContent = 'no address configured'; return }

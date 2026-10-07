@@ -151,6 +151,15 @@ app.get('/api/console/stats', async (c) => {
   })
 })
 
+
+const CSV_COLS = ['created_at', 'route', 'http_method', 'amount', 'currency', 'payer', 'recipient', 'fee_payer', 'tx_hash', 'block_number', 'challenge_id', 'memo'] as const
+function toCsv(rows: Record<string, unknown>[], fmtAmount: (raw: string | number) => string) {
+  const esc = (v: unknown) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
+  const head = [...CSV_COLS, 'amount_formatted'].join(',')
+  const body = rows.map((r) => [...CSV_COLS.map((k) => esc(r[k])), esc(fmtAmount(r.amount as string))].join(','))
+  return [head, ...body].join('\n') + '\n'
+}
+
 const shape = (s: Seller) => (r: CallRow) => ({ ...r, amountFormatted: fmt(r.amount), explorerUrl: EXPLORER[s.network].tx + r.tx_hash })
 
 app.get('/api/console/calls', async (c) => {
@@ -158,6 +167,12 @@ app.get('/api/console/calls', async (c) => {
   const limit = Math.min(Number(c.req.query('limit') ?? 50), 200), offset = Number(c.req.query('offset') ?? 0)
   const rows = await sql()`SELECT * FROM calls WHERE seller_id = ${s.id} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`
   return c.json((rows as CallRow[]).map(shape(s)))
+})
+
+app.get('/api/console/calls.csv', async (c) => {
+  const s = await requireSeller(c); if (s instanceof Response) return s
+  const rows = await sql()`SELECT * FROM calls WHERE seller_id = ${s.id} ORDER BY id DESC LIMIT 10000`
+  return c.body(toCsv(rows as Record<string, unknown>[], fmt), 200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="trajan-${s.slug}-calls-${new Date().toISOString().slice(0, 10)}.csv"` })
 })
 
 app.get('/api/console/calls/:hash', async (c) => {
