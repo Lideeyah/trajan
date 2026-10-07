@@ -249,9 +249,13 @@
     // Step 1 checklist
     if (meta.recipient) { $('s-address').classList.add('done'); $('s-address-val').textContent = short(meta.recipient) }
     if (meta.price) { $('s-price').classList.add('done'); $('s-price-val').textContent = meta.price + ' USD' }
-    $('s-code').classList.add('done')
     const snippet = meta.snippet || "app.get('/your-route', paid(), handler)\nmountTrajan(app)"
-    $('s-code-pre').innerHTML = snippet.split('\n').map((l) => `<span class="ln">${esc(l)}</span>`).join('')
+    $('s-code-pre').innerHTML = ['npx trajan-cli init --cloud', ...snippet.split('\n')].map((l) => `<span class="ln">${esc(l)}</span>`).join('')
+    $('rotateKey').onclick = async () => {
+      if (!confirm('This replaces your current key. Your server must be updated with the new one. Continue?')) return
+      const r = await fetch('/api/sellers/rotate-key', { method: 'POST' }).then((x) => x.json())
+      $('newKey').textContent = r.apiKey || r.error || ''
+    }
     $('withdrawNote').textContent = meta.canWithdraw
       ? 'Sends from your address. Settles on Tempo in about a second.'
       : 'Trajan Cloud never holds your key, so sending from here is off for now. Your funds are already at your address; send from your passkey wallet. In-browser passkey withdraw is next.'
