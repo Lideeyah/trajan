@@ -1,0 +1,18 @@
+{
+  "name": "trajan",
+  "version": "1.0.0",
+  "description": "Seller tooling for the [Machine Payments Protocol](https://mpp.dev) on [Tempo](https://tempo.xyz).",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "examples/*"
+  ]
+}

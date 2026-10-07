@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.trajan/
+*.db
+dist/
+.next/
+.DS_Store
