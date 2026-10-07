@@ -14,10 +14,7 @@
     --ring: #111111; --r-lg: 24px; --r-md: 16px; --r-sm: 10px;
     --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #0b0d12; --fg: #f3f3f1; --muted: #9a9892; --card: #14171f; --border: #232733; --soft: #1b1f29;
-    --accent: #f3f3f1; --accent-fg: #0b0d12; --ok: #4ade80; --ok-bg: #0f2a1a; --err: #f87171; --err-bg: #3a1212; --ring: #f3f3f1;
-  } }
+  /* Light (Tempo off-white) is the default everywhere. Dark is opt-in: <html data-theme="dark">. */
   :root[data-theme="dark"] {
     --bg: #0b0d12; --fg: #f3f3f1; --muted: #9a9892; --card: #14171f; --border: #232733; --soft: #1b1f29;
     --accent: #f3f3f1; --accent-fg: #0b0d12; --ok: #4ade80; --ok-bg: #0f2a1a; --err: #f87171; --err-bg: #3a1212; --ring: #f3f3f1;
