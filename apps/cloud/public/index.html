@@ -110,14 +110,18 @@
   async function connect(e) {
     const btn = e.currentTarget; btn.disabled = true; $('authErr').classList.add('hidden')
     try {
-      address = await window.trajan.connect()
+      address = await window.trajan.connect({ create: btn.id === 'signUp' })
       const m = await window.trajan.me()
       if (m.seller) { location.replace('/console'); return }
       $('address').value = address
       $('headerActions').innerHTML = '<button class="btn" id="out">Sign out</button>'; $('out').onclick = signOut
       show('setup'); $('name').focus()
     } catch (err) {
-      $('authErr').textContent = (err && err.message) || 'Passkey sign-in failed. Try again.'; $('authErr').classList.remove('hidden')
+      const m = (err && err.message) || ''
+      $('authErr').textContent = /not allowed|timed out|cancel/i.test(m)
+        ? (btn.id === 'signUp' ? 'Passkey creation was cancelled. Try again and approve with Touch ID.' : 'No passkey found on this device. If you\'re new, use "Create your seller with a passkey".')
+        : (m || 'Passkey sign-in failed. Try again.')
+      $('authErr').classList.remove('hidden')
     } finally { btn.disabled = false }
   }
   async function signOut() { await window.trajan.disconnect(); location.reload() }

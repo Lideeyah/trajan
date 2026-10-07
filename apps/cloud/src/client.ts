@@ -10,10 +10,11 @@ const provider = Provider.create({
   chains: [tempoModerato, tempo],
 })
 
-async function connect(): Promise<string> {
-  // wallet_connect runs register-or-login with the passkey and the /auth round-trip,
-  // which also sets our session cookie.
-  const res = (await provider.request({ method: 'wallet_connect' as any })) as any
+async function connect(opts: { create?: boolean } = {}): Promise<string> {
+  // wallet_connect runs the passkey ceremony plus the /auth round-trip (which sets our session cookie).
+  // `method: 'register'` creates a new passkey (Touch ID / Face ID right here); without it, it signs in with an existing one.
+  const params = opts.create ? [{ capabilities: { method: 'register', name: 'Trajan' } }] : undefined
+  const res = (await provider.request({ method: 'wallet_connect' as any, ...(params ? { params: params as any } : {}) })) as any
   const accounts: string[] = res?.accounts?.map((a: any) => (typeof a === 'string' ? a : a.address)) ?? res ?? []
   const address = accounts[0]
   if (!address) throw new Error('No account returned')
