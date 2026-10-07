@@ -4,7 +4,7 @@
   "description": "One command to make your API or MCP server payable by AI agents on Tempo, plus the seller console.",
   "type": "module",
   "bin": {
-    "trajan": "./dist/index.js"
+    "trajan": "dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Lideeyah/trajan.git",
+    "url": "git+https://github.com/Lideeyah/trajan.git",
     "directory": "packages/cli"
   },
   "files": [
