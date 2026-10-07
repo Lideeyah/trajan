@@ -5,6 +5,7 @@ import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Mppx, Transport, tempo } from 'mppx/server'
 import { privateKeyToAccount } from 'viem/accounts'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { createCallLog, attachCallLog, createWallet, trajanConsole, MODERATO_RPC, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS } from '@trajan/server'
 
 const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.meta.url), 'utf8')) as {
@@ -53,7 +54,7 @@ type PaidOptions = { amount?: string; name?: string }
  *   server.registerTool('search', { ... }, paid(async (args) => ({ content: [...] }), { name: 'search' }))
  * An unpaid call returns the MPP challenge; a paid call runs the handler and attaches the receipt.
  */
-export function paid<A, R extends { content: unknown[] }>(handler: ToolHandler<A, R>, opts: PaidOptions | string = {}) {
+export function paid<A, R extends CallToolResult>(handler: ToolHandler<A, R>, opts: PaidOptions | string = {}) {
   const { amount = config.price, name } = typeof opts === 'string' ? { amount: opts } : opts
   return async (args: A, extra: any) => {
     const result = await mppx.charge({ amount, description: name })(extra)
@@ -63,7 +64,7 @@ export function paid<A, R extends { content: unknown[] }>(handler: ToolHandler<A
 }
 
 /** registerTool + paid in one call, so the tool name is only written once. */
-export function registerPaidTool<A, R extends { content: unknown[] }>(
+export function registerPaidTool<A, R extends CallToolResult>(
   server: { registerTool: (name: string, cfg: any, cb: any) => unknown },
   name: string,
   cfg: Record<string, unknown>,
