@@ -16,6 +16,10 @@ export type ConsoleOptions = {
   /** Shown in the page header. */
   name?: string
   network?: 'moderato' | 'mainnet'
+  /** Default price per call, shown in the Set up checklist. */
+  price?: string
+  /** The two lines the seller added, shown in the Set up checklist. */
+  snippet?: string
 }
 
 export const MODERATO_EXPLORER_TX = 'https://explore.testnet.tempo.xyz/tx/'
@@ -42,6 +46,8 @@ export function trajanConsole(log: CallLog, opts: ConsoleOptions = {}) {
     recipient: opts.wallet?.address ?? null,
     token: opts.wallet?.token ?? null,
     canWithdraw: opts.wallet?.canWithdraw ?? false,
+    price: opts.price ?? null,
+    snippet: opts.snippet ?? null,
     explorerTx, explorerAddr, decimals,
   }))
 

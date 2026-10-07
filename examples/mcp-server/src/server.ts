@@ -55,6 +55,8 @@ app.route('/trajan', trajanConsole(log, {
   name: 'Trajan demo seller',
   network: 'moderato',
   wallet,
+  price: '0.01',
+  snippet: "app.get('/tools/echo', mppx.charge({ amount: '0.01' }), handler)\napp.route('/trajan', trajanConsole(log, { ... }))",
   explorerTxBase: MODERATO_EXPLORER_TX,
   explorerAddressBase: MODERATO_EXPLORER_ADDRESS,
 }))

@@ -40,6 +40,10 @@ const feePayer = process.env.TRAJAN_FEE_PAYER_KEY ? privateKeyToAccount(process.
 `
 }
 
+const snippetFor = (c: Config) => c.framework === 'mcp'
+  ? "registerPaidTool(server, 'name', { description, inputSchema }, handler)\nstartTrajanApi()"
+  : "app.get('/your-route', paid(), handler)\nmountTrajan(app)"
+
 const tail = (c: Config) => {
   const n = net(c)
   return `
@@ -60,6 +64,8 @@ export const console_ = trajanConsole(log, {
   name: config.name,
   network: '${c.network}',
   wallet,
+  price: config.price,
+  snippet: ${JSON.stringify(snippetFor(c))},
   explorerTxBase: ${n.tx},
   explorerAddressBase: ${n.addr},
 })

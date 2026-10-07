@@ -37,6 +37,8 @@ export const console_ = trajanConsole(log, {
   name: config.name,
   network: 'moderato',
   wallet,
+  price: config.price,
+  snippet: "app.get('/your-route', paid(), handler)\nmountTrajan(app)",
   explorerTxBase: MODERATO_EXPLORER_TX,
   explorerAddressBase: MODERATO_EXPLORER_ADDRESS,
 })
