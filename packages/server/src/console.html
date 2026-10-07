@@ -86,7 +86,9 @@
   .steps .title { font-weight: 600; }
   .steps .desc { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
   .steps .val { font-family: var(--mono); font-size: 12.5px; color: var(--muted); align-self: center; }
-  pre { margin: 10px 0 0; padding: 14px 16px; background: var(--soft); border-radius: var(--r-md); font: 13px/1.6 var(--mono); overflow-x: auto; }
+  pre { margin: 12px 0 0; padding: 12px 14px; background: var(--soft); border-radius: var(--r-md); font: 13px/1.7 var(--mono); overflow-x: auto; counter-reset: ln; }
+  pre .ln { display: block; white-space: pre; }
+  pre .ln::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 1.6em; margin-right: 12px; color: var(--muted); text-align: right; user-select: none; }
 
   .err { color: var(--err); background: var(--err-bg); border-radius: var(--r-md); padding: 12px 14px; }
   .ok { color: var(--ok); background: var(--ok-bg); border-radius: var(--r-md); padding: 12px 14px; }
@@ -240,7 +242,8 @@
     if (meta.recipient) { $('s-address').classList.add('done'); $('s-address-val').textContent = short(meta.recipient) }
     if (meta.price) { $('s-price').classList.add('done'); $('s-price-val').textContent = meta.price + ' USD' }
     $('s-code').classList.add('done')
-    $('s-code-pre').textContent = meta.snippet || "app.get('/your-route', paid(), handler)\nmountTrajan(app)"
+    const snippet = meta.snippet || "app.get('/your-route', paid(), handler)\nmountTrajan(app)"
+    $('s-code-pre').innerHTML = snippet.split('\n').map((l) => `<span class="ln">${esc(l)}</span>`).join('')
     $('withdrawNote').textContent = meta.canWithdraw
       ? 'Sends from your address. Settles on Tempo in about a second.'
       : 'Sending from here is off: this server doesn\'t hold your key. Your funds are already at your address — send from that wallet, or set TRAJAN_WITHDRAW_KEY to enable this form.'
