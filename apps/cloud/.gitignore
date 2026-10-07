@@ -2,3 +2,4 @@
 .env.local
 public/client.js
 public/client.js.map
+.env*

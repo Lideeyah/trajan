@@ -5,17 +5,20 @@
   "scripts": {
     "dev": "vercel dev",
     "typecheck": "tsc --noEmit",
-    "build": "esbuild src/client.ts --bundle --format=esm --platform=browser --target=es2022 --minify --outfile=public/client.js"
+    "build": "esbuild src/client.ts --bundle --format=esm --platform=browser --target=es2022 --minify --outfile=public/client.js",
+    "local": "node --no-warnings=ExperimentalWarning --env-file=.env.local --import tsx src/dev.ts"
   },
   "dependencies": {
     "hono": "^4",
-    "accounts": "*",
+    "accounts": "^0.19.1",
     "@neondatabase/serverless": "^1",
-    "mppx": "*",
     "viem": "^2",
-    "@trajan/server": "*"
+    "@hono/node-server": "^1"
   },
   "devDependencies": {
-    "esbuild": "*"
+    "esbuild": "^0.25",
+    "tsx": "^4",
+    "typescript": "^5",
+    "@types/node": "^24"
   }
 }
