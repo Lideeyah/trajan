@@ -29,8 +29,9 @@
 
   /* Header: the app name stands alone; the seller and network sit beside it. */
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 6px 22px; flex-wrap: wrap; }
-  .wordmark { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: 0.14em; }
-  .wordmark svg { width: 26px; height: 26px; }
+  .wordmark { display: inline-flex; align-items: baseline; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 600; font-size: 21px; line-height: 1; letter-spacing: 0.14em; }
+  /* Mark cropped to the arches; height = cap height; bottom edge sits on the text baseline. */
+  .wordmark svg { height: 0.74em; width: auto; vertical-align: baseline; display: inline-block; }
   .context { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
   .context .seller { color: var(--fg); font-weight: 500; }
   .live { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
@@ -116,7 +117,7 @@
 <body>
 <div class="wrap">
   <header>
-    <a class="wordmark" href="#" aria-label="Trajan"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 40 V24 a6 6 0 0 1 12 0 V40 M18 40 V24 a6 6 0 0 1 12 0 V40 M30 40 V24 a6 6 0 0 1 12 0 V40"/><path d="M4 40 H44"/></svg>TRAJAN</a>
+    <a class="wordmark" href="#" aria-label="Trajan"><svg viewBox="2 16 44 26" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 40 V24 a6 6 0 0 1 12 0 V40 M18 40 V24 a6 6 0 0 1 12 0 V40 M30 40 V24 a6 6 0 0 1 12 0 V40"/><path d="M4 40 H44"/></svg>TRAJAN</a>
     <div class="context">
       <span class="seller" id="seller">…</span>
       <span class="live" id="network">…</span>
