@@ -3,10 +3,10 @@
 import { readFileSync } from 'node:fs'
 import type { Hono } from 'hono'
 import { Mppx, tempo } from 'mppx/hono'
-import { createCallLog, attachCallLog, consoleApi, MODERATO_RPC, MODERATO_EXPLORER_TX } from '@trajan/server'
+import { createCallLog, attachCallLog, createWallet, trajanConsole, MODERATO_RPC, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS } from '@trajan/server'
 
 const config = JSON.parse(readFileSync(new URL('./trajan.config.json', import.meta.url), 'utf8')) as {
-  recipient: `0x${string}`; currency: `0x${string}`; price: string; db: string; apiPort: number
+  name: string; recipient: `0x${string}`; currency: `0x${string}`; price: string; db: string; apiPort: number
 }
 
 if (!process.env.MPP_SECRET_KEY) throw new Error('MPP_SECRET_KEY is not set (see .env)')
@@ -20,13 +20,27 @@ export const mppx = Mppx.create({
 export const log = createCallLog(config.db)
 attachCallLog(mppx, log, { rpcUrl: MODERATO_RPC })
 
-/** Read-only JSON API for the Trajan console. */
-export const trajanApi = consoleApi(log, { explorerTxBase: MODERATO_EXPLORER_TX })
+/** Balance always; withdraw only when TRAJAN_WITHDRAW_KEY (the recipient's key) is set. */
+export const wallet = createWallet({
+  recipient: config.recipient,
+  token: config.currency,
+  testnet: true,
+  withdrawKey: process.env.TRAJAN_WITHDRAW_KEY as `0x${string}` | undefined,
+})
+
+/** The console: page at /, JSON under /api. */
+export const console_ = trajanConsole(log, {
+  name: config.name,
+  network: 'moderato',
+  wallet,
+  explorerTxBase: MODERATO_EXPLORER_TX,
+  explorerAddressBase: MODERATO_EXPLORER_ADDRESS,
+})
 
 /** Gate a route: `app.get('/tool', paid(), handler)`. Override the price per route with `paid('0.05')`. */
 export const paid = (amount: string = config.price) => mppx.charge({ amount })
 
-/** Mount the console API at /trajan/api. */
+/** Mount the console at /trajan (page) and /trajan/api/* (JSON). */
 export function mountTrajan(app: Hono) {
-  app.route('/trajan/api', trajanApi)
+  app.route('/trajan', console_)
 }

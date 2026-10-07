@@ -73,6 +73,7 @@ export async function init(flags: InitFlags) {
     price,
     db: '.trajan/calls.db',
     apiPort: 8788,
+    name: String(pkg.name ?? 'Trajan'),
   }
 
   // 1. config + module
@@ -83,7 +84,7 @@ export async function init(flags: InitFlags) {
     const ow = await ask(`${srcDir}/trajan.ts exists. Overwrite? (y/N)`, { default: 'N' })
     if (!/^y/i.test(ow)) { closePrompts(); console.log('Left existing trajan.ts alone.'); return }
   }
-  writeFileSync(configPath, JSON.stringify({ recipient: config.recipient, currency: config.currency, price: config.price, db: config.db, apiPort: config.apiPort, network }, null, 2) + '\n')
+  writeFileSync(configPath, JSON.stringify({ name: config.name, recipient: config.recipient, currency: config.currency, price: config.price, db: config.db, apiPort: config.apiPort, network }, null, 2) + '\n')
   writeFileSync(modulePath, template(config))
 
   // 2. env
@@ -111,5 +112,6 @@ export async function init(flags: InitFlags) {
   console.log(`Set MPP_SECRET_KEY in .env${added.length ? `; added deps: ${added.join(', ')} (run npm install)` : ''}`)
   console.log(`\nAdd these lines to your server:\n`)
   for (const l of nextSteps(config, 'trajan.js')) console.log(`  ${l}`)
-  console.log(`\nThen start it and open the console: npx trajan console --api http://localhost:${framework === 'mcp' ? config.apiPort : 'PORT'}/trajan/api\n`)
+  console.log(`\nThen start your server and open the console at http://localhost:${framework === 'mcp' ? config.apiPort : 'PORT'}/trajan`)
+  console.log(`Optional: set TRAJAN_WITHDRAW_KEY (the recipient's private key) in .env to enable Withdraw from the console.\n`)
 }

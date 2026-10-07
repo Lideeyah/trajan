@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajan Console</title>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #0a0a0a; --muted: #6b6b6b; --card: #ffffff; --border: #e5e5e5;
+    --accent: #0a0a0a; --accent-fg: #ffffff; --ok: #15803d; --ok-bg: #ecfdf5; --err: #b91c1c; --err-bg: #fef2f2;
+    --ring: #2563eb; --radius: 10px; --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #0a0a0a; --fg: #fafafa; --muted: #9a9a9a; --card: #141414; --border: #262626;
+    --accent: #fafafa; --accent-fg: #0a0a0a; --ok: #4ade80; --ok-bg: #052e16; --err: #f87171; --err-bg: #450a0a; --ring: #60a5fa;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #0a0a0a; --fg: #fafafa; --muted: #9a9a9a; --card: #141414; --border: #262626;
+    --accent: #fafafa; --accent-fg: #0a0a0a; --ok: #4ade80; --ok-bg: #052e16; --err: #f87171; --err-bg: #450a0a; --ring: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
+  a { color: inherit; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  .pill { font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; }
+  .addr { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  nav { display: flex; gap: 4px; border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; background: var(--card); }
+  nav button { min-height: 36px; padding: 0 14px; border: 0; background: transparent; border-radius: 7px; cursor: pointer; color: var(--muted); }
+  nav button[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat .label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .stat .value { font-size: 26px; font-weight: 600; font-family: var(--mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; }
+  td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
+  td.num { text-align: right; }
+  tr.row { cursor: pointer; }
+  tr.row:hover td { background: color-mix(in srgb, var(--fg) 4%, transparent); }
+  tr.row:focus-within td { background: color-mix(in srgb, var(--ring) 10%, transparent); }
+  tr.row button { all: unset; cursor: pointer; display: block; width: 100%; }
+  .tablewrap { overflow-x: auto; }
+  .empty { padding: 36px 16px; text-align: center; color: var(--muted); }
+  .empty code { font-family: var(--mono); background: color-mix(in srgb, var(--fg) 6%, transparent); padding: 2px 6px; border-radius: 4px; }
+  .skeleton { height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton { animation: pulse 1.2s ease-in-out infinite; }
+    .flash td { animation: flash 1.2s ease-out; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    @keyframes flash { from { background: color-mix(in srgb, var(--ok) 18%, transparent); } }
+  }
+  .err { color: var(--err); background: var(--err-bg); border: 1px solid color-mix(in srgb, var(--err) 30%, transparent); border-radius: 8px; padding: 10px 12px; }
+  .ok { color: var(--ok); background: var(--ok-bg); border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); border-radius: 8px; padding: 10px 12px; }
+  .btn { min-height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.sm { min-height: 32px; padding: 0 10px; font-size: 12px; }
+  form .field { display: grid; gap: 6px; margin-bottom: 14px; }
+  label { font-size: 13px; font-weight: 500; }
+  input[type=text] { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); width: 100%; font-family: var(--mono); }
+  .hint { font-size: 12px; color: var(--muted); }
+  .field .inline-err { font-size: 12px; color: var(--err); }
+  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--fg); padding: 0; width: min(560px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  .dhead { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .dbody { padding: 16px; }
+  dl { display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; margin: 0; }
+  dt { color: var(--muted); font-size: 12px; padding-top: 2px; }
+  dd { margin: 0; font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
+  .two { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 768px) { .two { grid-template-columns: 2fr 1fr; } }
+  .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1 id="name">Trajan</h1>
+      <span class="pill" id="network">…</span>
+      <a class="addr" id="recipient" href="#" target="_blank" rel="noreferrer"></a>
+    </div>
+    <nav role="tablist" aria-label="Console sections">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="calls" aria-selected="false">Calls</button>
+      <button role="tab" data-tab="withdraw" aria-selected="false">Withdraw</button>
+    </nav>
+  </header>
+
+  <div id="error" class="err hidden" role="alert"></div>
+
+  <section id="tab-overview" role="tabpanel">
+    <div class="grid">
+      <div class="card stat"><div class="label">Revenue today</div><div class="value" id="revenueToday"><div class="skeleton" style="width:60%"></div></div><div class="sub" id="revenueTotal"></div></div>
+      <div class="card stat"><div class="label">Calls today</div><div class="value" id="callsToday"><div class="skeleton" style="width:40%"></div></div><div class="sub" id="callsTotal"></div></div>
+      <div class="card stat"><div class="label">Unique payers</div><div class="value" id="payers"><div class="skeleton" style="width:40%"></div></div><div class="sub">all time</div></div>
+      <div class="card stat"><div class="label">Balance</div><div class="value" id="balance"><div class="skeleton" style="width:60%"></div></div><div class="sub" id="balanceSub">on-chain, recipient</div></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>Latest calls</h2>
+        <div class="tablewrap"><table aria-live="polite">
+          <thead><tr><th>When</th><th>Route</th><th>Payer</th><th class="num">Amount</th></tr></thead>
+          <tbody id="recent"><tr><td colspan="4"><div class="skeleton"></div></td></tr></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h2>Top payers</h2>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Payer</th><th class="num">Calls</th><th class="num">Paid</th></tr></thead>
+          <tbody id="top"><tr><td colspan="3"><div class="skeleton"></div></td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-calls" role="tabpanel" class="hidden">
+    <div class="card">
+      <h2>All paid calls</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>When</th><th>Route</th><th>Payer</th><th class="num">Amount</th><th>Tx</th></tr></thead>
+        <tbody id="all"><tr><td colspan="5"><div class="skeleton"></div></td></tr></tbody>
+      </table></div>
+      <div style="margin-top:12px;display:flex;gap:8px"><button class="btn sm" id="more">Load more</button></div>
+    </div>
+  </section>
+
+  <section id="tab-withdraw" role="tabpanel" class="hidden">
+    <div class="two">
+      <div class="card">
+        <h2>Withdraw</h2>
+        <p class="hint" id="withdrawNote"></p>
+        <form id="withdrawForm" novalidate>
+          <div class="field">
+            <label for="to">Send to (Tempo address)</label>
+            <input type="text" id="to" name="to" autocomplete="off" spellcheck="false" placeholder="0x…" inputmode="text">
+            <span class="inline-err" id="toErr"></span>
+          </div>
+          <div class="field">
+            <label for="amount">Amount</label>
+            <input type="text" id="amount" name="amount" autocomplete="off" inputmode="decimal" placeholder="0.00">
+            <span class="hint" id="amountHint"></span>
+            <span class="inline-err" id="amountErr"></span>
+          </div>
+          <div class="field">
+            <label for="memo">Memo <span class="hint">(optional, goes on-chain)</span></label>
+            <input type="text" id="memo" name="memo" autocomplete="off" maxlength="64" placeholder="invoice 2026-10">
+          </div>
+          <button class="btn primary" type="submit" id="withdrawBtn">Withdraw</button>
+          <div id="withdrawResult" style="margin-top:12px"></div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Recipient</h2>
+        <dl>
+          <dt>Address</dt><dd id="wRecipient"></dd>
+          <dt>Token</dt><dd id="wToken"></dd>
+          <dt>Balance</dt><dd id="wBalance"></dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+</div>
+
+<dialog id="receipt" aria-labelledby="receiptTitle">
+  <div class="dhead"><strong id="receiptTitle">Receipt</strong><button class="btn sm" id="closeReceipt" aria-label="Close receipt">Close</button></div>
+  <div class="dbody"><dl id="receiptBody"></dl>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn sm" id="receiptExplorer" target="_blank" rel="noreferrer">Open in explorer</a>
+      <button class="btn sm" id="copyHash">Copy tx hash</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const base = location.pathname.replace(/\/$/, '')
+  const $ = (id) => document.getElementById(id)
+  const api = (p, init) => fetch(base + '/api' + p, init).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.statusText); return j })
+  const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '—'
+  const when = (iso) => { const d = new Date(iso), diff = (Date.now() - d) / 1000
+    if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff / 60) + 'm ago'; if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'; return d.toLocaleDateString() }
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  let meta = {}, seen = new Set(), offset = 0, calls = []
+
+  // Tabs
+  document.querySelectorAll('[role=tab]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[role=tab]').forEach((x) => x.setAttribute('aria-selected', String(x === b)))
+    document.querySelectorAll('[role=tabpanel]').forEach((p) => p.classList.toggle('hidden', p.id !== 'tab-' + b.dataset.tab))
+    if (b.dataset.tab === 'withdraw') loadBalance()
+  }))
+
+  function row(c, withTx) {
+    return `<tr class="row" data-hash="${esc(c.tx_hash)}"><td><button type="button">${when(c.created_at)}</button></td><td class="mono">${esc(c.route)}</td><td class="mono" title="${esc(c.payer || '')}">${short(c.payer)}</td><td class="num mono">${esc(c.amountFormatted)}</td>${withTx ? `<td class="mono">${short(c.tx_hash)}</td>` : ''}</tr>`
+  }
+  function empty(cols) {
+    return `<tr><td colspan="${cols}"><div class="empty">No paid calls yet. Make a request to a <code>paid()</code> route — it'll show up here within a second.</div></td></tr>`
+  }
+  function bind(tbody) {
+    tbody.querySelectorAll('tr.row').forEach((tr) => tr.querySelector('button').addEventListener('click', () => openReceipt(tr.dataset.hash)))
+  }
+
+  async function loadMeta() {
+    meta = await api('/meta')
+    $('name').textContent = meta.name
+    $('network').textContent = meta.network === 'mainnet' ? 'Tempo mainnet' : 'Tempo Moderato testnet'
+    if (meta.recipient) { $('recipient').textContent = short(meta.recipient); $('recipient').href = meta.explorerAddr + meta.recipient; $('recipient').title = meta.recipient }
+    $('wRecipient').textContent = meta.recipient || '—'
+    $('wToken').textContent = meta.token || '—'
+    $('withdrawNote').textContent = meta.canWithdraw
+      ? 'Sends from the recipient address. Settles on Tempo in about a second.'
+      : 'Withdraw is off: this server doesn\'t hold the recipient key. Funds are already at the recipient address — send from that wallet, or set TRAJAN_WITHDRAW_KEY to enable this form.'
+    $('withdrawForm').querySelectorAll('input,button').forEach((el) => el.disabled = !meta.canWithdraw)
+  }
+
+  async function refresh() {
+    try {
+      const [s, recent] = await Promise.all([api('/stats'), api('/calls?limit=8')])
+      $('error').classList.add('hidden')
+      $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = s.revenue + ' all time'
+      $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = s.calls + ' all time'
+      $('payers').textContent = s.payers
+      const tb = $('recent')
+      tb.innerHTML = recent.length ? recent.map((c) => row(c, false)).join('') : empty(4)
+      tb.querySelectorAll('tr.row').forEach((tr) => { if (seen.size && !seen.has(tr.dataset.hash)) tr.classList.add('flash') })
+      recent.forEach((c) => seen.add(c.tx_hash)); bind(tb)
+      $('top').innerHTML = s.topPayers.length ? s.topPayers.map((p) => `<tr><td class="mono" title="${esc(p.payer)}">${short(p.payer)}</td><td class="num">${p.calls}</td><td class="num mono">${esc(p.revenue)}</td></tr>`).join('') : `<tr><td colspan="3" class="empty">No payers yet</td></tr>`
+    } catch (e) {
+      $('error').textContent = 'Could not reach the console API: ' + e.message + ' — retrying.'; $('error').classList.remove('hidden')
+    }
+  }
+
+  async function loadBalance() {
+    if (!meta.recipient) { $('balance').textContent = '—'; $('balanceSub').textContent = 'no wallet configured'; $('wBalance').textContent = '—'; return }
+    try { const b = await api('/balance'); $('balance').textContent = b.formatted; $('wBalance').textContent = b.formatted; $('amountHint').textContent = 'Available: ' + b.formatted }
+    catch (e) { $('balance').textContent = '—'; $('balanceSub').textContent = 'balance unavailable'; }
+  }
+
+  async function loadAll(more) {
+    if (!more) { offset = 0; calls = [] }
+    const page = await api('/calls?limit=50&offset=' + offset)
+    calls = calls.concat(page); offset += page.length
+    const tb = $('all'); tb.innerHTML = calls.length ? calls.map((c) => row(c, true)).join('') : empty(5); bind(tb)
+    $('more').disabled = page.length < 50
+  }
+  $('more').addEventListener('click', () => loadAll(true))
+
+  async function openReceipt(hash) {
+    const c = await api('/calls/' + hash)
+    $('receiptBody').innerHTML = [
+      ['Route', c.http_method + ' ' + c.route], ['Amount', c.amountFormatted], ['Payer', c.payer || 'resolving…'], ['Recipient', c.recipient],
+      ['Tx hash', c.tx_hash], ['Block', c.block_number ?? '…'], ['Time', new Date(c.created_at).toLocaleString()], ['Challenge', c.challenge_id], ['Memo', c.memo || '—'],
+    ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')
+    $('receiptExplorer').href = c.explorerUrl
+    $('copyHash').onclick = () => navigator.clipboard.writeText(c.tx_hash).then(() => { $('copyHash').textContent = 'Copied'; setTimeout(() => $('copyHash').textContent = 'Copy tx hash', 1200) })
+    $('receipt').showModal()
+  }
+  $('closeReceipt').addEventListener('click', () => $('receipt').close())
+
+  // Withdraw
+  $('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const to = $('to').value.trim(), amount = $('amount').value.trim(), memo = $('memo').value.trim()
+    $('toErr').textContent = /^0x[0-9a-fA-F]{40}$/.test(to) ? '' : 'Enter a 0x address (40 hex characters).'
+    $('amountErr').textContent = /^\d+(\.\d{1,6})?$/.test(amount) && Number(amount) > 0 ? '' : 'Enter a positive amount, up to 6 decimals.'
+    if ($('toErr').textContent || $('amountErr').textContent) return
+    $('withdrawBtn').disabled = true; $('withdrawBtn').textContent = 'Sending…'; $('withdrawResult').innerHTML = ''
+    try {
+      const r = await api('/withdraw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, amount, memo }) })
+      $('withdrawResult').innerHTML = `<div class="ok">Sent ${esc(r.formatted ?? amount)} · <a href="${esc(r.explorerUrl)}" target="_blank" rel="noreferrer">view transaction</a></div>`
+      $('withdrawForm').reset(); loadBalance()
+    } catch (err) {
+      $('withdrawResult').innerHTML = `<div class="err">${esc(err.message)} <button type="button" class="btn sm" id="retryW">Try again</button></div>`
+      $('retryW').onclick = () => $('withdrawForm').requestSubmit()
+    } finally { $('withdrawBtn').disabled = false; $('withdrawBtn').textContent = 'Withdraw' }
+  })
+
+  loadMeta().then(() => { refresh(); loadBalance(); loadAll(false) }).catch((e) => { $('error').textContent = e.message; $('error').classList.remove('hidden') })
+  setInterval(refresh, 2000)
+  setInterval(loadBalance, 15000)
+})()
+</script>
+</body>
+</html>

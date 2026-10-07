@@ -1,10 +1,13 @@
 // Demo seller: a tiny Hono API with one paid route, gated by MPP on Tempo Moderato,
-// with the Trajan call log attached via mppx's payment hooks.
+// with the Trajan call log + console attached via mppx's payment hooks.
 
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Mppx, tempo } from 'mppx/hono'
-import { createCallLog, attachCallLog, consoleApi, MODERATO_RPC, MODERATO_TOKENS } from '@trajan/server'
+import {
+  createCallLog, attachCallLog, createWallet, trajanConsole,
+  MODERATO_RPC, MODERATO_TOKENS, MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS,
+} from '@trajan/server'
 
 const RECIPIENT = process.env.TEMPO_RECIPIENT as `0x${string}`
 const SECRET = process.env.MPP_SECRET_KEY
@@ -14,13 +17,7 @@ if (!RECIPIENT || !SECRET) {
 }
 
 const mppx = Mppx.create({
-  methods: [
-    tempo.charge({
-      currencies: [MODERATO_TOKENS.pathUSD],
-      recipient: RECIPIENT,
-      testnet: true,
-    }),
-  ],
+  methods: [tempo.charge({ currencies: [MODERATO_TOKENS.pathUSD], recipient: RECIPIENT, testnet: true })],
   secretKey: SECRET,
 })
 
@@ -31,9 +28,16 @@ attachCallLog(mppx, log, {
   onCall: (r) => console.log(`paid ${r.route} ${r.amount} ${r.tx_hash}`),
 })
 
+const wallet = createWallet({
+  recipient: RECIPIENT,
+  token: MODERATO_TOKENS.pathUSD,
+  testnet: true,
+  withdrawKey: process.env.TRAJAN_WITHDRAW_KEY as `0x${string}` | undefined,
+})
+
 const app = new Hono()
 
-app.get('/', (c) => c.json({ ok: true, service: 'trajan demo seller', paid: '/tools/echo', console: '/trajan/api/stats' }))
+app.get('/', (c) => c.json({ ok: true, service: 'trajan demo seller', paid: '/tools/echo', console: '/trajan' }))
 
 app.get(
   '/tools/echo',
@@ -41,7 +45,13 @@ app.get(
   (c) => c.json({ echo: c.req.query('q') ?? 'hello', paidAt: new Date().toISOString() }),
 )
 
-app.route('/trajan/api', consoleApi(log))
+app.route('/trajan', trajanConsole(log, {
+  name: 'Trajan demo seller',
+  network: 'moderato',
+  wallet,
+  explorerTxBase: MODERATO_EXPLORER_TX,
+  explorerAddressBase: MODERATO_EXPLORER_ADDRESS,
+}))
 
 const port = Number(process.env.PORT ?? 8787)
-serve({ fetch: app.fetch, port }, () => console.log(`demo seller on http://localhost:${port}`))
+serve({ fetch: app.fetch, port }, () => console.log(`demo seller on http://localhost:${port}  console: http://localhost:${port}/trajan`))

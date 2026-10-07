@@ -1,6 +1,11 @@
 export { createCallLog, type CallLog, type CallRow } from './log.js'
 export { attachCallLog, MODERATO_RPC, MAINNET_RPC, type AttachOptions } from './attach.js'
-export { consoleApi, MODERATO_EXPLORER_TX, MAINNET_EXPLORER_TX, type ApiOptions } from './api.js'
+export {
+  trajanConsole, consoleApi,
+  MODERATO_EXPLORER_TX, MODERATO_EXPLORER_ADDRESS, MAINNET_EXPLORER_TX, MAINNET_EXPLORER_ADDRESS,
+  type ConsoleOptions,
+} from './api.js'
+export { createWallet, type Wallet, type WalletOptions } from './wallet.js'
 
 /** Moderato testnet stablecoins (tempo.xyz faucet docs). 6 decimals. */
 export const MODERATO_TOKENS = {
