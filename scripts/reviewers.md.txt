@@ -1,0 +1,4 @@
+REVIEWERS.md is generated from the example sellers' .trajan/calls.db files and Trajan Cloud's database.
+Regenerate before submission (needs apps/cloud/.env.local for DATABASE_URL):
+
+  node --no-warnings=ExperimentalWarning --env-file=apps/cloud/.env.local --import tsx scripts/reviewers.mts

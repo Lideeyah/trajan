@@ -18,7 +18,7 @@ Everything Trajan claims is checkable on Tempo's public testnet (Moderato, chain
 | Founder's hosted account — a passkey created on 8 Oct 2026; the address is derived from the passkey's P256 key | `0xDC2AAE7352E56B332C0E2210Ee16aa5D812D2e5e` | https://explore.testnet.tempo.xyz/address/0xDC2AAE7352E56B332C0E2210Ee16aa5D812D2e5e |
 | pathUSD (Moderato test stablecoin, 6 decimals) | `0x20c0000000000000000000000000000000000000` | https://explore.testnet.tempo.xyz/address/0x20c0000000000000000000000000000000000000 |
 
-## Payment to a hosted account (Trajan Cloud)
+## Payments to a hosted account (Trajan Cloud)
 
 Seller "Pust", created through the live sign-up with a passkey. Reported to Trajan Cloud by `trajan-cli init --cloud` from a plain Hono app.
 
