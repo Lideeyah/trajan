@@ -11,6 +11,7 @@ Stripe merchants get this inside the Stripe dashboard. If you host your own serv
 - Demo video: [LINK]
 - Live console (read-only demo seller): [LINK]
 - Colosseum submission: [LINK]
+- **Reviewers:** [REVIEWERS.md](REVIEWERS.md) — every testnet transaction behind the demo, the addresses, and a five-minute verification path.
 
 ---
 
