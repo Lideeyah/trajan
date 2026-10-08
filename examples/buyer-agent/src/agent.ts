@@ -22,27 +22,36 @@ const account = privateKeyToAccount(key)
 const task = process.argv.slice(2).join(' ') ||
   'Get me today\'s quote, then count the words in it. Report the quote, the word count, and what each call cost.'
 
-// 1. Connect to the seller (stdio) and make the MCP client payment-aware.
+// 1. Connect to the seller and make the client payment-aware.
+//    Default: the demo MCP server over stdio. With DEMO_SELLER_URL set: one paid HTTP endpoint
+//    (used by the demo runner), paid through mppx's fetch.
 const here = dirname(fileURLToPath(import.meta.url))
-const transport = new StdioClientTransport({
-  command: 'node',
-  args: ['--no-warnings=ExperimentalWarning', '--env-file=.env', '--import', 'tsx', 'src/server.ts'],
-  cwd: resolve(here, '../../mcp-tools'),
-  stderr: 'pipe',
-  env: { ...process.env } as Record<string, string>, // the SDK strips custom vars by default
-})
-const mcp = new Client({ name: 'trajan-agent', version: '0.1.0' })
-await mcp.connect(transport)
-transport.stderr?.on('data', (d) => { const s = String(d); if (!s.includes('[mppx]')) process.stderr.write(`[seller] ${s}`) })
-McpClient.wrap(mcp, { methods: [tempo({ account })] })
-
-// 2. Expose the seller's tools to Claude.
-const { tools: mcpTools } = await mcp.listTools()
-const tools: Anthropic.Tool[] = mcpTools.map((t) => ({
-  name: t.name,
-  description: t.description ?? '',
-  input_schema: t.inputSchema as Anthropic.Tool.InputSchema,
-}))
+const httpUrl = process.env.DEMO_SELLER_URL
+const httpTool = process.env.DEMO_TOOL_NAME ?? 'call_paid_api'
+const httpDesc = process.env.DEMO_TOOL_DESC ?? `Calls a paid API at ${httpUrl}. Costs a small per-call fee in stablecoins on Tempo, paid automatically.`
+let mcp: Client | null = null
+let httpFetch: ((url: string) => Promise<Response>) | null = null
+let tools: Anthropic.Tool[]
+if (httpUrl) {
+  const { Mppx: MppxClient, tempo: tempoClient } = await import('mppx/client')
+  const m = MppxClient.create({ methods: [tempoClient({ account })], polyfill: false })
+  httpFetch = (u) => m.fetch(u)
+  tools = [{ name: httpTool, description: httpDesc, input_schema: { type: 'object', properties: {}, additionalProperties: false } }]
+} else {
+  const transport = new StdioClientTransport({
+    command: 'node',
+    args: ['--no-warnings=ExperimentalWarning', '--env-file=.env', '--import', 'tsx', 'src/server.ts'],
+    cwd: resolve(here, '../../mcp-tools'),
+    stderr: 'pipe',
+    env: { ...process.env } as Record<string, string>, // the SDK strips custom vars by default
+  })
+  mcp = new Client({ name: 'trajan-agent', version: '0.1.0' })
+  await mcp.connect(transport)
+  transport.stderr?.on('data', (d) => { const s = String(d); if (!s.includes('[mppx]')) process.stderr.write(`[seller] ${s}`) })
+  McpClient.wrap(mcp, { methods: [tempo({ account })] })
+  const { tools: mcpTools } = await mcp.listTools()
+  tools = mcpTools.map((t) => ({ name: t.name, description: t.description ?? '', input_schema: t.inputSchema as Anthropic.Tool.InputSchema }))
+}
 console.log(`buyer ${account.address}\ntools: ${tools.map((t) => t.name).join(', ')}\ntask: ${task}\n`)
 
 // 3. The agent loop.
@@ -70,10 +79,20 @@ for (let turn = 0; turn < 8; turn++) {
     if (b.type !== 'tool_use') continue
     process.stdout.write(`  -> ${b.name}(${JSON.stringify(b.input)}) … `)
     try {
-      const r = await (mcp as any).callTool({ name: b.name, arguments: b.input as Record<string, unknown> })
-      const text = (r.content as any[]).map((c) => c.text ?? '').join('')
-      const tx: string | undefined = r.receipt?.reference
-      const charge = r._meta?.['trajan/charge'] as { amount: string; currency: string } | undefined
+      let text: string, tx: string | undefined, charge: { amount: string; currency: string } | undefined
+      if (httpFetch) {
+        const res = await httpFetch(httpUrl!)
+        text = await res.text()
+        const rh = res.headers.get('payment-receipt')
+        const receipt = rh ? JSON.parse(Buffer.from(rh, 'base64url').toString()) : null
+        tx = receipt?.reference
+        charge = process.env.DEMO_TOOL_PRICE ? { amount: process.env.DEMO_TOOL_PRICE, currency: 'pathUSD' } : undefined
+      } else {
+        const r = await (mcp as any).callTool({ name: b.name, arguments: b.input as Record<string, unknown> })
+        text = (r.content as any[]).map((c) => c.text ?? '').join('')
+        tx = r.receipt?.reference
+        charge = r._meta?.['trajan/charge'] as { amount: string; currency: string } | undefined
+      }
       if (tx) receipts.push({ tool: b.name, tx, amount: charge?.amount })
       console.log(tx ? `paid ✓ ${charge ? charge.amount + ' USD ' : ''}${tx.slice(0, 10)}…` : 'free')
       results.push({ type: 'tool_result', tool_use_id: b.id, content: text + (tx ? `\n[paid ${charge ? charge.amount + ' USD' : ''} on Tempo, tx ${tx}]` : '') })
@@ -87,4 +106,4 @@ for (let turn = 0; turn < 8; turn++) {
 
 console.log(`\n${receipts.length} paid call(s):`)
 for (const r of receipts) console.log(`  ${r.tool.padEnd(18)} ${(r.amount ?? '?').padStart(6)} USD  ${EXPLORER}${r.tx}`)
-await mcp.close()
+if (mcp) await mcp.close()

@@ -1,0 +1,9 @@
+{
+  "name": "@trajan/example-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "node --no-warnings=ExperimentalWarning --env-file=../mcp-server/.env --env-file=../fresh-hono/.env --import tsx run.mts",
+    "seed": "npm run -s demo -- --seed"
+  }
+}
