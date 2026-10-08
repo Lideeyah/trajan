@@ -1,6 +1,6 @@
 {
   "name": "trajan-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "One command to make your API or MCP server payable by AI agents on Tempo, plus the seller console.",
   "type": "module",
   "bin": {

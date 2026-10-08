@@ -85,12 +85,16 @@ export async function init(flags: InitFlags) {
   const srcDir = existsSync(join(dir, 'src')) ? 'src' : '.'
   const modulePath = join(dir, srcDir, 'trajan.ts')
   const configPath = join(dir, srcDir, 'trajan.config.json')
+  let writeModule = true
   if (existsSync(modulePath) && !flags.yes) {
     const ow = await ask(`${srcDir}/trajan.ts exists. Overwrite? (y/N)`, { default: 'N' })
-    if (!/^y/i.test(ow)) { closePrompts(); console.log('Left existing trajan.ts alone.'); return }
+    writeModule = /^y/i.test(ow)
+    if (!writeModule) console.log('Left existing trajan.ts alone.')
   }
-  writeFileSync(configPath, JSON.stringify({ name: config.name, recipient: config.recipient, currency: config.currency, price: config.price, db: config.db, apiPort: config.apiPort, network }, null, 2) + '\n')
-  writeFileSync(modulePath, template(config))
+  if (writeModule) {
+    writeFileSync(configPath, JSON.stringify({ name: config.name, recipient: config.recipient, currency: config.currency, price: config.price, db: config.db, apiPort: config.apiPort, network }, null, 2) + '\n')
+    writeFileSync(modulePath, template(config))
+  }
 
   // 2. env
   const envPath = join(dir, '.env')
@@ -122,7 +126,7 @@ export async function init(flags: InitFlags) {
 
   closePrompts()
 
-  console.log(`\nWrote ${srcDir}/trajan.ts and ${srcDir}/trajan.config.json${flags.cloud ? ' · connected to Trajan Cloud' : ''}`)
+  console.log(`\n${writeModule ? `Wrote ${srcDir}/trajan.ts and ${srcDir}/trajan.config.json` : `Kept ${srcDir}/trajan.ts`}${flags.cloud ? ' · connected to Trajan Cloud' : ''}`)
   console.log(`Set MPP_SECRET_KEY in .env${added.length ? `; added deps: ${added.join(', ')} (run npm install)` : ''}`)
   console.log(`\nAdd these lines to your server:\n`)
   for (const l of nextSteps(config, 'trajan.js')) console.log(`  ${l}`)
