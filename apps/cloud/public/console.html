@@ -112,6 +112,9 @@
   dt { color: var(--muted); font-size: 13px; padding-top: 2px; }
   dd { margin: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
   .hidden { display: none !important; }
+  .seg { display:inline-flex; gap:4px; padding:3px; border:1px solid var(--border); border-radius:999px; background:var(--soft) }
+  .seg .btn { border:0; background:transparent; min-height:30px; padding:0 12px; font-size:12.5px } .seg .btn[aria-selected=true] { background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06) }
+  .tag { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:var(--soft); color:var(--muted); font-family:var(--sans) }
 </style>
 </head>
 <body>
@@ -163,7 +166,11 @@
     </div>
     <div class="two">
       <div class="card">
-        <h2>Payments, live</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+          <h2 style="margin:0">Payments, live</h2>
+          <div class="seg" role="tablist" aria-label="Source"><button class="btn sm" role="tab" data-src="reported" aria-selected="true">Reported by your server</button><button class="btn sm" role="tab" data-src="chain" aria-selected="false">On chain</button></div>
+        </div>
+        <p class="hint" id="srcHint" style="margin:0 0 10px">Rows your server sent with its key.</p>
         <div class="tablewrap"><table aria-live="polite">
           <thead><tr><th>When</th><th>What they called</th><th>Who paid</th><th class="num">Paid</th></tr></thead>
           <tbody id="recent"><tr><td colspan="4"><div class="skeleton"></div></td></tr></tbody>
@@ -278,12 +285,23 @@
     else if (!hadCalls && s.calls > 0) { hadCalls = true; setTimeout(() => show('paid'), 1500) }
   }
 
+  // Source toggle: what the seller's server reported vs. every transfer that landed at the address on Tempo.
+  let source = 'reported', chainData = null
+  document.querySelectorAll('[data-src]').forEach((b) => b.addEventListener('click', () => {
+    source = b.dataset.src
+    document.querySelectorAll('[data-src]').forEach((x) => x.setAttribute('aria-selected', String(x === b)))
+    $('srcHint').textContent = source === 'chain' ? 'Every stablecoin transfer to your address, read from Tempo. Independent of your server.' : 'Rows your server sent with its key.'
+    $('more').style.display = source === 'chain' ? 'none' : ''
+    $('recent').dataset.key = ''; refresh()
+  }))
+  const chainRow = (r) => `<tr class="row" data-hash="${esc(r.txHash)}"><td><button type="button">${when(r.timestamp)}</button></td><td class="mono">${r.reported ? esc(r.route) : '<span class="tag">on chain only</span>'}</td><td class="mono" title="${esc(r.sender)}">${short(r.sender)}</td><td class="num mono">${esc(r.formatted)}</td></tr>`
   async function refresh() {
+    if (source === 'chain') return refreshChain()
     try {
       const [s, recent] = await Promise.all([api('/stats'), api('/calls?limit=8')])
       $('error').classList.add('hidden')
-      $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = s.revenue + ' all time'
-      $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = s.calls + ' all time'
+      $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = s.revenue + ' all time' + (chainData ? ` · ${chainData.total} on chain` : '')
+      $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = s.calls + ' all time' + (chainData ? ` · ${chainData.count} on chain` : '')
       $('payers').textContent = s.payers
       firstPayment(s, recent)
       const tb = $('recent'), key = recent.map((c) => c.tx_hash + ':' + (c.payer || '')).join('|')
@@ -303,6 +321,24 @@
       $('error').textContent = 'Can\'t reach the console API: ' + e.message + ' — retrying.'; $('error').classList.remove('hidden')
     }
   }
+
+  async function refreshChain() {
+    try {
+      const [s, ch] = await Promise.all([api('/stats'), api('/chain?limit=50')])
+      $('error').classList.add('hidden'); chainData = ch
+      $('revenueToday').textContent = s.revenueToday; $('revenueTotal').textContent = `${ch.total} on chain, all time`
+      $('callsToday').textContent = s.callsToday; $('callsTotal').textContent = `${ch.count} transfers on chain`
+      $('payers').textContent = s.payers
+      const tb = $('recent'), key = 'chain:' + ch.rows.map((r) => r.txHash).join('|')
+      if (tb.dataset.key !== key) { tb.dataset.key = key; tb.innerHTML = ch.rows.length ? ch.rows.map(chainRow).join('') : `<tr><td colspan="4" class="empty">No transfers to your address yet</td></tr>`
+        tb.querySelectorAll('tr.row').forEach((tr) => tr.querySelector('button').addEventListener('click', () => window.open(meta.explorerTx + tr.dataset.hash, '_blank', 'noreferrer'))) }
+    } catch (e) { $('error').textContent = 'Can\'t read the chain right now: ' + e.message + ' — retrying.'; $('error').classList.remove('hidden') }
+  }
+  // Even in the reported view, show the chain total under "all time" so the two numbers can be compared.
+  async function chainTotals() {
+    try { chainData = await api('/chain?limit=5') } catch {}
+  }
+  setInterval(chainTotals, 15000); setTimeout(chainTotals, 1500)
 
   async function loadMore() {
     const page = await api('/calls?limit=50&offset=' + offset)

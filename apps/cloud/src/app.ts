@@ -136,6 +136,54 @@ app.get('/api/console/meta', async (c) => {
   })
 })
 
+// On-chain truth for the seller's address: every stablecoin transfer that landed there, from Tempo's public
+// Transfers API. Independent of what the seller's server reported, so the console shows history from the first
+// second after sign-up and never misses a payment. Rows are tagged with whether the server reported them.
+const TRANSFERS_API = 'https://api.tempo.xyz/v1/transfers'
+type ChainRow = { txHash: string; blockNumber: number; sender: string; amount: string; formatted: string; timestamp: string }
+const chainCache = new Map<string, { at: number; rows: ChainRow[]; count: number; capped: boolean }>()
+async function chainTransfers(address: string, network: string, token: string) {
+  const key = `${network}:${address}:${token}`
+  const hit = chainCache.get(key)
+  if (hit && Date.now() - hit.at < 30_000) return hit
+  const rows: ChainRow[] = []
+  let cursor: string | null = null, count = 0, capped = false
+  for (let page = 0; page < 5; page++) {
+    const u = new URL(TRANSFERS_API)
+    u.searchParams.set('recipient', address); u.searchParams.set('token', token)
+    u.searchParams.set('chainId', network === 'moderato' ? 'testnet' : 'mainnet')
+    u.searchParams.set('limit', '200'); u.searchParams.set('order', 'desc')
+    if (page === 0) u.searchParams.set('include', 'totalCount')
+    if (cursor) u.searchParams.set('cursor', cursor)
+    const r = await fetch(u, { signal: AbortSignal.timeout(8000) })
+    if (!r.ok) throw new Error(`transfers api ${r.status}`)
+    const j = (await r.json()) as any
+    if (page === 0) { count = j.meta?.totalCount ?? 0; capped = !!j.meta?.totalCountCapped }
+    for (const t of j.data ?? []) rows.push({ txHash: t.transactionHash, blockNumber: t.blockNumber, sender: t.sender, amount: t.sourceAmount?.baseUnits ?? '0', formatted: t.sourceAmount?.formatted ?? '0', timestamp: t.timestamp })
+    cursor = j.nextCursor ?? null
+    if (!cursor) break
+  }
+  const out = { at: Date.now(), rows, count: count || rows.length, capped }
+  chainCache.set(key, out)
+  return out
+}
+
+app.get('/api/console/chain', async (c) => {
+  const s = await requireSeller(c); if (s instanceof Response) return s
+  const limit = Math.min(Number(c.req.query('limit') ?? 50), 500)
+  try {
+    const ch = await chainTransfers(s.address, s.network, MODERATO_TOKENS.pathUSD)
+    const hashes = ch.rows.slice(0, limit).map((r) => r.txHash)
+    const reported = hashes.length ? await sql()`SELECT tx_hash, route FROM calls WHERE seller_id = ${s.id} AND tx_hash = ANY(${hashes})` : []
+    const routeBy = new Map(reported.map((r) => [String(r.tx_hash).toLowerCase(), r.route as string]))
+    const total = ch.rows.reduce((a, r) => a + BigInt(r.amount), 0n)
+    return c.json({
+      count: ch.count, summedOver: ch.rows.length, total: fmt(total.toString()),
+      rows: ch.rows.slice(0, limit).map((r) => ({ ...r, reported: routeBy.has(r.txHash.toLowerCase()), route: routeBy.get(r.txHash.toLowerCase()) ?? null })),
+    })
+  } catch (e) { return c.json({ error: (e as Error).message }, 502) }
+})
+
 app.get('/api/console/stats', async (c) => {
   const s = await requireSeller(c); if (s instanceof Response) return s
   const day = new Date(); day.setUTCHours(0, 0, 0, 0)
