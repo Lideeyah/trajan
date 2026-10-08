@@ -228,6 +228,28 @@
     if (tab === 'cashout') loadBalance()
   }
   document.querySelectorAll('[role=tab]').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)))
+  // Deep links (#cashout) and a tiny window.postMessage API so a parent page can drive the console:
+  //   {trajan:'show', tab}            switch step
+  //   {trajan:'locate', selector, id} reply {trajan:'rect', id, rect} with the element's viewport rect (scrolls it into view)
+  if (['setup','paid','cashout'].includes(location.hash.slice(1))) show(location.hash.slice(1))
+  window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (['setup','paid','cashout'].includes(t)) show(t) })
+  window.addEventListener('message', (e) => {
+    const m = e.data || {}
+    if (m.trajan === 'show') show(m.tab)
+    if (m.trajan === 'type') {
+      const el = document.querySelector(m.selector); if (!el) return
+      el.scrollIntoView({ block: 'center', behavior: 'instant' }); el.focus(); el.value = ''
+      let i = 0
+      const t = setInterval(() => { el.value = m.value.slice(0, ++i); el.dispatchEvent(new Event('input', { bubbles: true })); if (i >= m.value.length) { clearInterval(t); e.source.postMessage({ trajan: 'typed', id: m.id }, '*') } }, m.perChar ?? 28)
+    }
+    if (m.trajan === 'click') { const el = document.querySelector(m.selector); if (el) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); el.click() } }
+    if (m.trajan === 'locate') {
+      const el = document.querySelector(m.selector)
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' })
+      const r = el ? el.getBoundingClientRect() : null
+      e.source.postMessage({ trajan: 'rect', id: m.id, rect: r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null }, '*')
+    }
+  })
 
   function row(c) {
     return `<tr class="row" data-hash="${esc(c.tx_hash)}"><td><button type="button">${when(c.created_at)}</button></td><td class="mono">${esc(c.route)}</td><td class="mono" title="${esc(c.payer || '')}">${short(c.payer)}</td><td class="num mono">${esc(c.amountFormatted)}</td></tr>`
@@ -336,6 +358,7 @@
     try {
       const r = await api('/withdraw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, amount, memo }) })
       $('withdrawResult').innerHTML = `<div class="ok">Sent ${esc(r.formatted ?? amount)} · <a href="${esc(r.explorerUrl)}" target="_blank" rel="noreferrer">view on Tempo</a></div>`
+      if (window.parent !== window) window.parent.postMessage({ trajan: 'withdrawn', txHash: r.txHash, blockNumber: r.blockNumber, formatted: r.formatted ?? amount, explorerUrl: r.explorerUrl }, '*')
       $('withdrawForm').reset(); loadBalance()
     } catch (err) {
       $('withdrawResult').innerHTML = `<div class="err">${esc(err.message)} <button type="button" class="btn sm" id="retryW">Try again</button></div>`
