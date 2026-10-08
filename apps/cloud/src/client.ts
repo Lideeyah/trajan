@@ -30,5 +30,20 @@ async function me() {
   return (await fetch('/api/me')).json() as Promise<{ signedIn: boolean; seller: null | { name: string; slug: string; address: string; price: string; network: string } }>
 }
 
-declare global { interface Window { trajan: { connect: typeof connect; disconnect: typeof disconnect; me: typeof me; provider: typeof provider } } }
-window.trajan = { connect, disconnect, me, provider }
+/** Cash out from the hosted console. The transfer is built and signed by the passkey right here in the
+ *  browser (Touch ID / Face ID); no key ever touches Trajan Cloud. Returns the mined receipt. */
+async function withdraw(opts: { to: `0x${string}`; amount: string; memo?: string; token: `0x${string}`; chainId: number }) {
+  // After a reload the provider may know the account without being "connected"; re-attach (prompts the passkey if needed).
+  let accounts = (await provider.request({ method: 'eth_accounts' as any })) as string[]
+  if (!accounts?.length) accounts = (await provider.request({ method: 'eth_requestAccounts' as any })) as string[]
+  if (!accounts?.length) throw new Error('Sign in with your passkey first')
+  const res = (await provider.request({
+    method: 'wallet_transfer' as any,
+    params: [{ amount: opts.amount, to: opts.to, token: opts.token, chainId: `0x${opts.chainId.toString(16)}`, ...(opts.memo ? { memo: opts.memo } : {}) }] as any,
+  })) as any
+  const receipt = res?.receipt ?? res
+  return { txHash: receipt?.transactionHash as string, blockNumber: receipt?.blockNumber != null ? Number(receipt.blockNumber) : null, status: receipt?.status }
+}
+
+declare global { interface Window { trajan: { connect: typeof connect; disconnect: typeof disconnect; me: typeof me; withdraw: typeof withdraw; provider: typeof provider } } }
+window.trajan = { connect, disconnect, me, withdraw, provider }

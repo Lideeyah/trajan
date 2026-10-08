@@ -212,6 +212,7 @@
   </div>
 </dialog>
 
+<script type="module">import '/client.js'</script>
 <script>
 (() => {
   const base = ''
@@ -257,8 +258,8 @@
       $('newKey').textContent = r.apiKey || r.error || ''
     }
     $('withdrawNote').textContent = meta.canWithdraw
-      ? 'Sends from your address. Settles on Tempo in about a second.'
-      : 'Trajan Cloud never holds your key, so sending from here is off for now. Your funds are already at your address; send from your passkey wallet. In-browser passkey withdraw is next.'
+      ? (meta.withdrawMode === 'passkey' ? 'Signed by your passkey, right here. Trajan never holds your key. Settles on Tempo in about a second.' : 'Sends from your address. Settles on Tempo in about a second.')
+      : 'Sending from here is off: this server doesn\'t hold your key.'
     $('withdrawForm').querySelectorAll('input,button').forEach((el) => el.disabled = !meta.canWithdraw)
   }
 
@@ -344,11 +345,20 @@
     if ($('toErr').textContent || $('amountErr').textContent) return
     $('withdrawBtn').disabled = true; $('withdrawBtn').textContent = 'Sending…'; $('withdrawResult').innerHTML = ''
     try {
-      const r = await api('/withdraw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, amount, memo }) })
+      let r
+      if (meta.withdrawMode === 'passkey') {
+        $('withdrawBtn').textContent = 'Confirm with your passkey…'
+        const w = await window.trajan.withdraw({ to, amount, memo, token: meta.token, chainId: meta.chainId })
+        if (w.status && w.status !== 'success' && w.status !== '0x1') throw new Error('The transfer was rejected on-chain')
+        r = { formatted: amount, explorerUrl: meta.explorerTx + w.txHash, txHash: w.txHash, blockNumber: w.blockNumber }
+      } else {
+        r = await api('/withdraw', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, amount, memo }) })
+      }
       $('withdrawResult').innerHTML = `<div class="ok">Sent ${esc(r.formatted ?? amount)} · <a href="${esc(r.explorerUrl)}" target="_blank" rel="noreferrer">view on Tempo</a></div>`
       $('withdrawForm').reset(); loadBalance()
     } catch (err) {
-      $('withdrawResult').innerHTML = `<div class="err">${esc(err.message)} <button type="button" class="btn sm" id="retryW">Try again</button></div>`
+      const msg = /not allowed|cancel|timed out|abort/i.test(err.message || '') ? 'Passkey confirmation was cancelled.' : (err.shortMessage || err.message || 'Transfer failed')
+      $('withdrawResult').innerHTML = `<div class="err">${esc(msg)} <button type="button" class="btn sm" id="retryW">Try again</button></div>`
       $('retryW').onclick = () => $('withdrawForm').requestSubmit()
     } finally { $('withdrawBtn').disabled = false; $('withdrawBtn').textContent = 'Send' }
   })

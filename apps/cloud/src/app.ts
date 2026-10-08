@@ -128,7 +128,7 @@ app.get('/api/console/meta', async (c) => {
   const ex = EXPLORER[s.network]
   return c.json({
     name: s.name, slug: s.slug, network: s.network, recipient: s.address, token: MODERATO_TOKENS.pathUSD,
-    canWithdraw: false, // cloud never holds keys; withdraw is signed in the browser with the passkey (later)
+    canWithdraw: true, withdrawMode: 'passkey', chainId: s.network === 'moderato' ? 42431 : 4217, // signed in the browser by the passkey; cloud never holds keys
     price: s.price,
     snippet: "app.get('/your-route', paid(), handler)\nmountTrajan(app)",
     explorerTx: ex.tx, explorerAddr: ex.addr, decimals: DEC,
