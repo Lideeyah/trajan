@@ -104,8 +104,21 @@
   async function boot() {
     const m = await window.trajan.me()
     if (m.signedIn && m.seller) { location.replace('/console'); return }
-    if (m.signedIn && !m.seller) { $('headerActions').innerHTML = '<button class="btn" id="out">Sign out</button>'; $('out').onclick = signOut; show('setup'); return }
+    if (m.signedIn && !m.seller) {
+      $('headerActions').innerHTML = '<button class="btn" id="out">Sign out</button>'; $('out').onclick = signOut; show('setup')
+      // Session exists but this page load never ran the passkey ceremony: ask the wallet for the account.
+      $('address').value = await knownAddress()
+      return
+    }
     show('landing')
+  }
+  async function knownAddress() {
+    try {
+      const p = window.trajan.provider
+      let a = await p.request({ method: 'eth_accounts' })
+      if (!a || !a.length) a = await p.request({ method: 'eth_requestAccounts' })
+      return (a && a[0]) || ''
+    } catch { return '' }
   }
   async function connect(e) {
     const btn = e.currentTarget; btn.disabled = true; $('authErr').classList.add('hidden')
