@@ -83,6 +83,8 @@ Non-interactive: `npx trajan-cli init --yes --recipient 0x… --price 0.01 [--ne
 - **Receipt** — route or tool name, amount, payer, recipient, tx hash, block, fee (caller or sponsored), challenge id, memo; open in explorer, copy hash. **Export CSV** of every call for your books.
 - **Withdraw** — to-address, amount, optional on-chain memo. Settles in about a second.
 
+The hosted console at [trajan-five.vercel.app](https://trajan-five.vercel.app) adds two things the self-hosted page can't: an **On chain** view of every stablecoin transfer that landed at your address, read from Tempo's public Transfers API and tagged with whether your server reported it, and **cash out signed by your passkey** in the browser, so no key ever reaches the server.
+
 One HTML page served by your own process. No build step. Light/dark automatic. Data lives in `.trajan/calls.db` (SQLite); nothing leaves your machine unless you deploy it.
 
 ## How it works
@@ -134,8 +136,14 @@ Non-custodial by design: Trajan never holds buyers' or sellers' funds, and Traja
 
 - **Testnet only.** Moderato. No mainnet deployment.
 - **Charge mode only.** MPP session/streaming payments are not supported yet.
-- **Single seller per console.** No multi-tenant hosting.
+- **Single seller per self-hosted console.** Multi-seller hosting is Trajan Cloud's job.
 - **No audit.** The payment path is upstream `mppx`; Trajan's own code is the CLI, the call log, the console and the wallet helper. Withdraw and fee sponsorship put private keys on your server — treat them like any other secret.
+
+## What's next
+
+- **Mainnet.** The CLI, the console, the chain reader and the passkey cash-out already take a network setting; mainnet is a flag and a funded address away.
+- **Earn on your balance.** Tempo Earn is rolling out yield on stablecoins for businesses. A seller's revenue sits idle at their address; putting it to work from the console, with the same passkey signing as cash-out, is the natural fourth step. Not started.
+- **x402 on Solana.** The console is protocol-agnostic (a row is a row). Self-hosted x402 sellers exist today and have the same gap.
 
 ## Pre-existing code
 
