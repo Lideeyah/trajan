@@ -7,9 +7,9 @@
   },
   "dependencies": {
     "express": "^5",
-    "mppx": "^0.13.1",
     "hono": "^4",
-    "viem": "^2",
-    "trajan-server": "*"
+    "mppx": "^0.13.4",
+    "trajan-server": "*",
+    "viem": "^2"
   }
 }

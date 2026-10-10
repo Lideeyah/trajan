@@ -11,5 +11,8 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "mppx": "^0.13.4"
+  }
 }

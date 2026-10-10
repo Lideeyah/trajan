@@ -6,12 +6,12 @@
     "start": "node --no-warnings=ExperimentalWarning --env-file=.env --import tsx src/server.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "*",
-    "zod": "*",
-    "mppx": "^0.13.1",
-    "hono": "^4",
     "@hono/node-server": "^1",
+    "@modelcontextprotocol/sdk": "*",
+    "hono": "^4",
+    "mppx": "^0.13.4",
+    "trajan-server": "*",
     "viem": "^2",
-    "trajan-server": "*"
+    "zod": "*"
   }
 }

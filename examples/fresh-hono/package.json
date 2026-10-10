@@ -6,10 +6,10 @@
     "start": "node --no-warnings=ExperimentalWarning --env-file=.env --import tsx src/server.ts"
   },
   "dependencies": {
-    "hono": "^4",
     "@hono/node-server": "^1",
-    "mppx": "^0.13.1",
-    "viem": "^2",
-    "trajan-server": "*"
+    "hono": "^4",
+    "mppx": "^0.13.4",
+    "trajan-server": "*",
+    "viem": "^2"
   }
 }

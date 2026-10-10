@@ -10,7 +10,7 @@
   },
   "peerDependencies": {
     "hono": ">=4",
-    "mppx": ">=0.13",
+    "mppx": "^0.13.4",
     "viem": ">=2.57"
   },
   "description": "Seller tooling for the Machine Payments Protocol on Tempo: call log, console, wallet helpers over mppx.",
