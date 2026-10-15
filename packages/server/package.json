@@ -32,5 +32,24 @@
   },
   "engines": {
     "node": ">=22.5"
-  }
+  },
+  "keywords": [
+    "mpp",
+    "mppx",
+    "machine-payments-protocol",
+    "tempo",
+    "http-402",
+    "402",
+    "agent-payments",
+    "ai-agents",
+    "mcp",
+    "stablecoins",
+    "paid-api",
+    "api-monetization",
+    "console",
+    "dashboard",
+    "hono",
+    "express"
+  ],
+  "homepage": "https://trajan-five.vercel.app"
 }
