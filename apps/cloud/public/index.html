@@ -41,6 +41,30 @@
   .key { font-family:var(--mono); font-size:13px; background:var(--soft); padding:12px 14px; border-radius:16px; word-break:break-all; user-select:all }
   .hidden { display:none !important }
   footer { margin-top:60px; color:var(--muted); font-size:13px }
+
+  /* Landing motion: a terminal that types the setup, and the payment loop. Both loop; both go still under reduced motion. */
+  .alive { display:grid; gap:14px; grid-template-columns:1fr; margin:26px 0 8px }
+  @media (min-width:900px) { .alive { grid-template-columns:1.15fr 1fr } }
+  .term { background:#111; color:#e8e6e1; border-radius:18px; padding:18px 20px; font:13px/1.65 var(--mono); min-height:214px; position:relative; overflow:hidden }
+  .term .bar { display:flex; gap:6px; margin-bottom:12px } .term .bar i { width:10px; height:10px; border-radius:50%; background:#2a2a2a; display:block }
+  .term .p { color:#8a8780 } .term .c { color:#fff } .term .o { color:#b9b6ae } .term .k { color:#ffb067 } .term .ok { color:#6fd38f }
+  .term .cur { display:inline-block; width:7px; height:14px; background:#e8e6e1; vertical-align:-2px; margin-left:1px; animation:blink 1s steps(1) infinite }
+  @keyframes blink { 50% { opacity:0 } }
+  .flow { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px 20px; min-height:214px; display:flex; flex-direction:column; justify-content:space-between }
+  .flow .t { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600 }
+  .flow svg { width:100%; height:auto; display:block }
+  .flow .node { fill:var(--card); stroke:var(--border); stroke-width:1.5 } .flow .lbl { font:600 12px var(--sans); fill:var(--fg) } .flow .sub { font:11px var(--sans); fill:var(--muted) } .flow .wire { stroke:var(--border); stroke-width:1.5; fill:none }
+  .flow .dot { fill:var(--live) } .flow .dot2 { fill:var(--ok) }
+  .flow .cap { font-size:13px; color:var(--muted); min-height:20px }
+  @media (prefers-reduced-motion:no-preference) {
+    .flow .dot { offset-path:path('M62 46 C 160 46, 160 46, 258 46'); animation:go 8s linear infinite }
+    .flow .dot2 { offset-path:path('M258 46 C 160 46, 160 46, 62 46'); animation:back 8s linear infinite }
+    .flow .cash { offset-path:path('M258 46 C 300 46, 330 70, 352 96'); animation:cash 8s linear infinite }
+    @keyframes go { 0% { offset-distance:0%; opacity:0 } 6% { opacity:1 } 30% { offset-distance:100%; opacity:1 } 34% { opacity:0 } 100% { offset-distance:100%; opacity:0 } }
+    @keyframes back { 0%,40% { offset-distance:0%; opacity:0 } 46% { opacity:1 } 66% { offset-distance:100%; opacity:1 } 70% { opacity:0 } 100% { offset-distance:100%; opacity:0 } }
+    @keyframes cash { 0%,74% { offset-distance:0%; opacity:0 } 78% { opacity:1 } 96% { offset-distance:100%; opacity:1 } 100% { opacity:0 } }
+  }
+  @media (prefers-reduced-motion:reduce) { .term .cur { animation:none } .flow .dot, .flow .dot2, .flow .cash { display:none } }
 </style>
 </head>
 <body>
@@ -61,6 +85,20 @@
       </div>
       <p class="hint" style="margin-top:12px">Your passkey is your Tempo account. Face ID or Touch ID, no seed phrase, no extension. Payments go straight to it.</p>
       <div id="authErr" class="err hidden" role="alert"></div>
+    </div>
+    <div class="alive" aria-hidden="true">
+      <div class="term" id="term"><div class="bar"><i></i><i></i><i></i></div><div id="termBody"></div></div>
+      <div class="flow">
+        <div class="t">What happens on every call</div>
+        <svg viewBox="0 0 400 120" role="img">
+          <path class="wire" d="M62 46 H258"/><path class="wire" d="M258 46 C 300 46, 330 70, 352 96"/>
+          <rect class="node" x="12" y="24" width="100" height="44" rx="12"/><text class="lbl" x="62" y="43" text-anchor="middle">Agent</text><text class="sub" x="62" y="58" text-anchor="middle">asks, then pays</text>
+          <rect class="node" x="208" y="24" width="100" height="44" rx="12"/><text class="lbl" x="258" y="43" text-anchor="middle">Your API</text><text class="sub" x="258" y="58" text-anchor="middle">402, then 200</text>
+          <rect class="node" x="302" y="78" width="92" height="36" rx="12"/><text class="lbl" x="348" y="100" text-anchor="middle">Your address</text>
+          <circle class="dot" r="5"/><circle class="dot2" r="5"/><circle class="dot cash" r="5"/>
+        </svg>
+        <div class="cap" id="flowCap">The agent asks. Your API answers 402 with a price.</div>
+      </div>
     </div>
     <div class="cards">
       <div class="card"><div class="step">Step 1</div><h3>SET UP</h3><p>Sign up, name your seller, set a price. In your server's folder, run <code>npx trajan-cli init --cloud</code> and add the two lines it prints.</p></div>
@@ -166,6 +204,52 @@
   $('copyKey').onclick = () => navigator.clipboard.writeText($('apiKey').textContent).then(() => { $('copyKey').textContent = 'Copied'; setTimeout(() => $('copyKey').textContent = 'Copy key', 1200) })
 
   boot().catch((e) => { $('authErr').textContent = e.message; $('authErr').classList.remove('hidden'); show('landing') })
+</script>
+
+<script>
+  // Typed terminal (loops) and the flow caption, in step with the SVG's 8s cycle.
+  (function () {
+    const body = document.getElementById('termBody'); if (!body) return
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    const script = [
+      { t: 'cmd', s: 'npx trajan-cli init --cloud' },
+      { t: 'out', s: 'Trajan init · sneaker-prices' },
+      { t: 'out', s: 'Detected hono.  Price per call (USD): 0.02' },
+      { t: 'out', s: 'Wrote src/trajan.ts · connected to Trajan Cloud' },
+      { t: 'out', s: '' },
+      { t: 'out', s: 'Add these lines to your server:' },
+      { t: 'key', s: "  import { paid, mountTrajan } from './trajan.js'" },
+      { t: 'key', s: "  app.get('/price/:sku', paid(), handler)" },
+      { t: 'key', s: '  mountTrajan(app)' },
+      { t: 'cmd', s: 'npm start' },
+      { t: 'ok',  s: 'sneaker-prices on :8796 · console at /trajan' },
+    ]
+    const esc = (x) => x.replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]))
+    const line = (l, text) => (l.t === 'cmd' ? `<span class="p">$ </span><span class="c">${esc(text)}</span>` : `<span class="${l.t === 'key' ? 'k' : l.t === 'ok' ? 'ok' : 'o'}">${esc(text)}</span>`)
+    function renderAll() { body.innerHTML = script.map((l) => line(l, l.s)).join('<br>') }
+    if (reduce) { renderAll(); return }
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    async function run() {
+      while (true) {
+        body.innerHTML = ''
+        const done = []
+        for (const l of script) {
+          if (l.t === 'cmd') {
+            for (let i = 1; i <= l.s.length; i++) { body.innerHTML = [...done, line(l, l.s.slice(0, i)) + '<span class="cur"></span>'].join('<br>'); await sleep(38) }
+            await sleep(350)
+          } else { await sleep(l.s ? 140 : 60) }
+          done.push(line(l, l.s)); body.innerHTML = done.join('<br>')
+        }
+        body.innerHTML = done.join('<br>') + '<span class="cur"></span>'
+        await sleep(6000)
+      }
+    }
+    run()
+    const cap = document.getElementById('flowCap')
+    const caps = ['The agent asks. Your API answers 402 with a price.', 'The agent pays on Tempo and asks again. Your API answers 200.', 'The money is already at your address. Trajan shows you the row.']
+    let i = 0; cap.textContent = caps[0]
+    setInterval(() => { i = (i + 1) % 3; cap.textContent = caps[i] }, 2667)
+  })()
 </script>
 </body>
 </html>
