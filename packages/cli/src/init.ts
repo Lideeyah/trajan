@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto'
 import { ask, choose, closePrompts, isAddress, isPrice } from './prompt.js'
 import { template, nextSteps, type Config, type Framework, type Network } from './templates.js'
 
+const MAINNET = { USDCe: '0x20c000000000000000000000b9537d11c60e8b50', OUSD: '0x20c0000000000000000000006a37DA5C996874BE' } as const
 const MODERATO = {
   pathUSD: '0x20c0000000000000000000000000000000000000',
 } as const
@@ -68,7 +69,13 @@ export async function init(flags: InitFlags) {
   let currency = flags.currency
   if (!currency) {
     if (network === 'moderato') currency = MODERATO.pathUSD
-    else currency = await ask('Stablecoin contract address on Tempo mainnet (TIP-20)', { validate: (v) => (isAddress(v) ? null : 'Enter a 0x address') })
+    else {
+      const pick = flags.yes ? 'usdce' : await choose('Stablecoin to accept on Tempo mainnet:', [
+        { key: 'usdce', label: 'USDC.e (mppx default)' }, { key: 'ousd', label: 'OUSD (OpenUSD)' }, { key: 'other', label: 'Another TIP-20 token address' },
+      ] as const, 'usdce')
+      currency = pick === 'usdce' ? MAINNET.USDCe : pick === 'ousd' ? MAINNET.OUSD
+        : await ask('Token contract address on Tempo mainnet (TIP-20)', { validate: (v) => (isAddress(v) ? null : 'Enter a 0x address') })
+    }
   }
 
   const config: Config = {

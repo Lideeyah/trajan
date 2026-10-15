@@ -16,6 +16,9 @@ import { sql, kv, migrate, type Seller, type CallRow } from './db.js'
 const ORIGIN = process.env.TRAJAN_ORIGIN ?? 'http://localhost:3000'
 const RP_ID = new URL(ORIGIN).hostname
 const MODERATO_TOKENS = { pathUSD: '0x20c0000000000000000000000000000000000000' } as const
+const MAINNET_TOKENS = { USDCe: '0x20c000000000000000000000b9537d11c60e8b50' } as const
+// Payment token per network: pathUSD on Moderato, USDC.e (mppx's mainnet default) on mainnet. Both 6 decimals.
+const tokenFor = (network: string) => (network === 'mainnet' ? { address: MAINNET_TOKENS.USDCe, symbol: 'USDC.e' } : { address: MODERATO_TOKENS.pathUSD, symbol: 'pathUSD' })
 const EXPLORER = {
   moderato: { tx: 'https://explore.testnet.tempo.xyz/tx/', addr: 'https://explore.testnet.tempo.xyz/address/' },
   mainnet: { tx: 'https://explore.tempo.xyz/tx/', addr: 'https://explore.tempo.xyz/address/' },
@@ -146,7 +149,7 @@ app.get('/api/console/meta', async (c) => {
   const s = await requireSeller(c); if (s instanceof Response) return s
   const ex = EXPLORER[s.network]
   return c.json({
-    name: s.name, slug: s.slug, network: s.network, recipient: s.address, token: MODERATO_TOKENS.pathUSD,
+    name: s.name, slug: s.slug, network: s.network, recipient: s.address, token: tokenFor(s.network).address, tokenSymbol: tokenFor(s.network).symbol,
     canWithdraw: true, withdrawMode: 'passkey', chainId: s.network === 'moderato' ? 42431 : 4217, // signed in the browser by the passkey; cloud never holds keys
     price: s.price,
     snippet: "app.get('/your-route', paid(), handler)\nmountTrajan(app)",
@@ -191,7 +194,7 @@ app.get('/api/console/chain', async (c) => {
   const s = await requireSeller(c); if (s instanceof Response) return s
   const limit = Math.min(Number(c.req.query('limit') ?? 50), 500)
   try {
-    const ch = await chainTransfers(s.address, s.network, MODERATO_TOKENS.pathUSD)
+    const ch = await chainTransfers(s.address, s.network, tokenFor(s.network).address)
     const hashes = ch.rows.slice(0, limit).map((r) => r.txHash)
     const reported = hashes.length ? await sql()`SELECT tx_hash, route FROM calls WHERE seller_id = ${s.id} AND tx_hash = ANY(${hashes})` : []
     const routeBy = new Map(reported.map((r) => [String(r.tx_hash).toLowerCase(), r.route as string]))
@@ -252,7 +255,7 @@ app.get('/api/console/balance', async (c) => {
   const s = await requireSeller(c); if (s instanceof Response) return s
   try {
     const client = createClient({ testnet: s.network === 'moderato' })
-    const b = await client.token.getBalance({ account: s.address as `0x${string}`, token: MODERATO_TOKENS.pathUSD })
+    const b = await client.token.getBalance({ account: s.address as `0x${string}`, token: tokenFor(s.network).address })
     return c.json({ raw: b.amount.toString(), formatted: b.formatted, decimals: b.decimals })
   } catch (e) { return c.json({ error: (e as Error).message }, 502) }
 })

@@ -36,6 +36,7 @@
   pre { margin:10px 0 0; padding:12px 14px; background:var(--soft); border-radius:16px; overflow-x:auto; line-height:1.7 }
   .panel { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:26px; max-width:560px }
   form .field { display:grid; gap:6px; margin-bottom:16px } label { font-size:13.5px; font-weight:500 }
+  select { min-height:46px; padding:0 14px; border:1px solid var(--border); border-radius:16px; background:var(--bg); width:100%; font:inherit; font-size:15px; color:inherit; appearance:auto }
   input[type=text] { min-height:46px; padding:0 14px; border:1px solid var(--border); border-radius:16px; background:var(--bg); width:100%; font-size:15px } input.mono { font-family:var(--mono); font-size:14px }
   .err { color:var(--err); background:var(--err-bg); border-radius:16px; padding:12px 14px; margin-top:12px } .ok { color:var(--ok); background:var(--ok-bg); border-radius:16px; padding:12px 14px }
   .key { font-family:var(--mono); font-size:13px; background:var(--soft); padding:12px 14px; border-radius:16px; word-break:break-all; user-select:all }
@@ -115,6 +116,7 @@
       <form id="setupForm" novalidate>
         <div class="field"><label for="name">What are you selling?</label><input type="text" id="name" name="name" autocomplete="organization" placeholder="e.g. Sneaker price API" maxlength="60"></div>
         <div class="field"><label for="price">Price per call (USD)</label><input type="text" id="price" name="price" inputmode="decimal" value="0.01" class="mono"></div>
+        <div class="field"><label for="network">Network</label><select id="network" name="network"><option value="moderato" selected>Tempo Moderato testnet (free funds, pathUSD)</option><option value="mainnet">Tempo mainnet (real money, USDC.e)</option></select><span class="hint" id="networkHint">Testnet is free: agents pay with faucet money and nothing is at risk.</span></div>
         <div class="field"><label for="address">Payments go to</label><input type="text" id="address" name="address" class="mono" readonly><span class="hint">This is your passkey's Tempo address. You can change it later.</span></div>
         <button class="btn primary" type="submit" id="setupBtn">Create seller</button>
         <div id="setupErr" class="err hidden" role="alert"></div>
@@ -179,6 +181,11 @@
       $('authErr').classList.remove('hidden')
     } finally { btn.disabled = false }
   }
+  document.getElementById('network')?.addEventListener('change', (e) => {
+    document.getElementById('networkHint').textContent = e.target.value === 'mainnet'
+      ? 'Real money. Agents pay in USDC.e on Tempo mainnet; your passkey address receives it. Trajan is not audited; start with small prices.'
+      : 'Testnet is free: agents pay with faucet money and nothing is at risk.'
+  })
   async function signOut() { await window.trajan.disconnect(); location.reload() }
   $('signUp').onclick = connect; $('signIn').onclick = connect; $('signInTop').onclick = connect
 
@@ -186,7 +193,7 @@
     e.preventDefault(); $('setupErr').classList.add('hidden'); $('setupBtn').disabled = true
     try {
       const r = await fetch('/api/sellers', { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: $('name').value, price: $('price').value.trim(), address: $('address').value }) })
+        body: JSON.stringify({ name: $('name').value, price: $('price').value.trim(), address: $('address').value, network: $('network').value }) })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || r.statusText)
       $('apiKey').textContent = j.apiKey
