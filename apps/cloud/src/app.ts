@@ -24,6 +24,7 @@ const EXPLORER = {
 const pages = {
   index: readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'),
   console: readFileSync(new URL('../public/console.html', import.meta.url), 'utf8'),
+  admin: readFileSync(new URL('../public/admin.html', import.meta.url), 'utf8'),
 }
 // The browser bundle is served by the function too, so it never depends on static-file routing.
 let clientJs: string | null = null
@@ -37,6 +38,24 @@ app.use('*', async (c, next) => { await migrate(); await next() })
 app.route('/auth', auth)
 app.get('/', (c) => c.html(pages.index))
 app.get('/console', (c) => c.html(pages.console))
+
+// Private admin view: who signed up, what they reported, totals. Gated by ADMIN_TOKEN (env); no session involved.
+const adminOk = (c: any) => { const t = process.env.ADMIN_TOKEN; return !!t && (c.req.query('token') === t || c.req.header('authorization') === `Bearer ${t}`) }
+app.get('/api/admin/overview', async (c) => {
+  if (!adminOk(c)) return c.json({ error: 'forbidden' }, 403)
+  const sellers = await sql()`SELECT s.id, s.name, s.slug, s.address, s.price, s.network, s.created_at,
+      COUNT(c.id)::int AS calls, COALESCE(SUM(c.amount::numeric),0)::text AS revenue, MAX(c.created_at) AS last_call,
+      COUNT(DISTINCT c.payer)::int AS payers
+    FROM sellers s LEFT JOIN calls c ON c.seller_id = s.id GROUP BY s.id ORDER BY s.created_at DESC`
+  const [t] = await sql()`SELECT (SELECT COUNT(*)::int FROM sellers) AS sellers, (SELECT COUNT(*)::int FROM calls) AS calls,
+      (SELECT COUNT(*)::int FROM sellers WHERE created_at >= now() - interval '7 days') AS sellers_7d,
+      (SELECT COUNT(*)::int FROM calls WHERE created_at >= now() - interval '7 days') AS calls_7d`
+  return c.json({ totals: t, sellers: sellers.map((s) => ({ ...s, revenue: fmt(s.revenue as string) })) })
+})
+app.get('/admin', (c) => {
+  if (!adminOk(c)) return c.text('forbidden', 403)
+  return c.html(pages.admin)
+})
 app.get('/client.js', (c) => c.body(clientBundle(), 200, { 'content-type': 'application/javascript; charset=utf-8', 'cache-control': 'public, max-age=300' }))
 app.get('/favicon.svg', (c) => c.body(readFileSync(new URL('../public/favicon.svg', import.meta.url), 'utf8'), 200, { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400' }))
 app.get('/favicon.ico', (c) => c.redirect('/favicon.svg?v=3'))
